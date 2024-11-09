@@ -256,11 +256,11 @@
       init_promiseAllSettled();
       nmp = window.nativeModuleProxy;
       MMKVManager = nmp.MMKVManager;
-      FileManager = nmp.DCDFileManager ?? nmp.RTNFileManager;
-      ClientInfoManager = nmp.InfoDictionaryManager ?? nmp.RTNClientInfoManager;
-      DeviceManager = nmp.DCDDeviceManager ?? nmp.RTNDeviceManager;
+      FileManager = nmp.NativeFileModule ?? nmp.RTNFileManager ?? nmp.DCDFileManager;
+      ClientInfoManager = nmp.NativeClientInfoModule ?? nmp.RTNClientInfoManager ?? nmp.InfoDictionaryManager;
+      DeviceManager = nmp.NativeDeviceModule ?? nmp.RTNDeviceManager ?? nmp.DCDDeviceManager;
       ({ BundleUpdaterManager } = nmp);
-      ThemeManager = nmp.RTNThemeManager ?? nmp.DCDTheme;
+      ThemeManager = nmp.NativeThemeModule ?? nmp.RTNThemeManager ?? nmp.DCDTheme;
     }
   });
 
@@ -2411,7 +2411,7 @@
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
       DISCORD_SERVER = "https://discord.gg/XjYgWXHb9Q";
-      GITHUB = "https://github.com/pyoncord";
+      GITHUB = "https://github.com/bunny-mod";
       HTTP_REGEX = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
       HTTP_REGEX_MULTI = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&//=]*)/g;
       BUNNY_PROXY_PREFIX = "https://bn-plugins.github.io/vd-proxy";
@@ -2750,6 +2750,7 @@
     PressableScale: () => PressableScale,
     RedesignCompat: () => RedesignCompat,
     RowButton: () => RowButton,
+    SafeAreaProvider: () => SafeAreaProvider,
     SafeAreaView: () => SafeAreaView,
     SegmentedControl: () => SegmentedControl,
     SegmentedControlPages: () => SegmentedControlPages,
@@ -2771,7 +2772,7 @@
     TwinButtons: () => TwinButtons,
     useSegmentedControlState: () => useSegmentedControlState
   });
-  var bySingularProp, findSingular, findProp, LegacyAlert, CompatButton, HelpMessage, SafeAreaView, ActionSheetRow, Button, TwinButtons, IconButton, RowButton, PressableScale, TableRow, TableRowIcon, TableRowTrailingText, TableRowGroup, TableRadioGroup, TableRadioRow, TableSwitchRow, TableCheckboxRow, TableSwitch, TableRadio, TableCheckbox, FormSwitch, FormRadio, FormCheckbox, Card, RedesignCompat, AlertModal, AlertActionButton, AlertActions, AvatarPile, Stack, Avatar, TextInput, TextArea, SegmentedControl, SegmentedControlPages, useSegmentedControlState, CompatSegmentedControl, FloatingActionButton, ActionSheet, BottomSheetTitleHeader, textsModule, Text, Forms, LegacyForm, LegacyFormArrow, LegacyFormCTA, LegacyFormCTAButton, LegacyFormCardSection, LegacyFormCheckbox, LegacyFormCheckboxRow, LegacyFormCheckmark, LegacyFormDivider, LegacyFormHint, LegacyFormIcon, LegacyFormInput, LegacyFormLabel, LegacyFormRadio, LegacyFormRadioGroup, LegacyFormRadioRow, LegacyFormRow, LegacyFormSection, LegacyFormSelect, LegacyFormSliderRow, LegacyFormSubLabel, LegacyFormSwitch, LegacyFormSwitchRow, LegacyFormTernaryCheckBox, LegacyFormText, LegacyFormTitle, FlashList;
+  var bySingularProp, findSingular, findProp, LegacyAlert, CompatButton, HelpMessage, SafeAreaView, SafeAreaProvider, ActionSheetRow, Button, TwinButtons, IconButton, RowButton, PressableScale, TableRow, TableRowIcon, TableRowTrailingText, TableRowGroup, TableRadioGroup, TableRadioRow, TableSwitchRow, TableCheckboxRow, TableSwitch, TableRadio, TableCheckbox, FormSwitch, FormRadio, FormCheckbox, Card, RedesignCompat, AlertModal, AlertActionButton, AlertActions, AvatarPile, Stack, Avatar, TextInput, TextArea, SegmentedControl, SegmentedControlPages, useSegmentedControlState, CompatSegmentedControl, FloatingActionButton, ActionSheet, BottomSheetTitleHeader, textsModule, Text, Forms, LegacyForm, LegacyFormArrow, LegacyFormCTA, LegacyFormCTAButton, LegacyFormCardSection, LegacyFormCheckbox, LegacyFormCheckboxRow, LegacyFormCheckmark, LegacyFormDivider, LegacyFormHint, LegacyFormIcon, LegacyFormInput, LegacyFormLabel, LegacyFormRadio, LegacyFormRadioGroup, LegacyFormRadioRow, LegacyFormRow, LegacyFormSection, LegacyFormSelect, LegacyFormSliderRow, LegacyFormSubLabel, LegacyFormSwitch, LegacyFormSwitchRow, LegacyFormTernaryCheckBox, LegacyFormText, LegacyFormTitle, FlashList;
   var init_components = __esm({
     "src/metro/common/components.ts"() {
       "use strict";
@@ -2787,7 +2788,7 @@
       LegacyAlert = findByDisplayNameLazy("FluxContainer(Alert)");
       CompatButton = findByPropsLazy("Looks", "Colors", "Sizes");
       HelpMessage = findByNameLazy("HelpMessage");
-      SafeAreaView = proxyLazy(() => findByProps("useSafeAreaInsets").SafeAreaView);
+      ({ SafeAreaView, SafeAreaProvider } = lazyDestructure(() => findByProps("useSafeAreaInsets")));
       ActionSheetRow = findProp("ActionSheetRow");
       Button = findSingular("Button");
       TwinButtons = findProp("TwinButtons");
@@ -4618,7 +4619,7 @@
       init_logger();
       init_toasts();
       import_react_native5 = __toESM(require_react_native());
-      versionHash = "b37ff5b-dev";
+      versionHash = "bc1a023-dev";
     }
   });
 
@@ -5447,72 +5448,77 @@
     var styles = useStyles2();
     var debugInfo = getDebugInfo();
     return /* @__PURE__ */ jsx(ErrorBoundary, {
-      children: /* @__PURE__ */ jsxs(SafeAreaView, {
-        style: styles.container,
+      children: /* @__PURE__ */ jsxs(SafeAreaProvider, {
         children: [
-          /* @__PURE__ */ jsxs(import_react_native14.View, {
-            style: {
-              gap: 4
-            },
+          " ",
+          /* @__PURE__ */ jsxs(SafeAreaView, {
+            style: styles.container,
             children: [
-              /* @__PURE__ */ jsx(Text, {
-                variant: "display-lg",
-                children: "Uh oh."
-              }),
-              /* @__PURE__ */ jsx(Text, {
-                variant: "text-md/normal",
-                children: "A crash occured while rendering a component. This could be caused by a plugin, Bunny or Discord itself."
-              }),
-              /* @__PURE__ */ jsxs(Text, {
-                variant: "text-sm/normal",
-                color: "text-muted",
+              /* @__PURE__ */ jsxs(import_react_native14.View, {
+                style: {
+                  gap: 4
+                },
                 children: [
-                  debugInfo.os.name,
-                  "; ",
-                  debugInfo.discord.build,
-                  " (",
-                  debugInfo.discord.version,
-                  "); ",
-                  debugInfo.bunny.version
+                  /* @__PURE__ */ jsx(Text, {
+                    variant: "display-lg",
+                    children: "Uh oh."
+                  }),
+                  /* @__PURE__ */ jsx(Text, {
+                    variant: "text-md/normal",
+                    children: "A crash occurred while rendering a component. This could be caused by a plugin, Bunny or Discord itself."
+                  }),
+                  /* @__PURE__ */ jsxs(Text, {
+                    variant: "text-sm/normal",
+                    color: "text-muted",
+                    children: [
+                      debugInfo.os.name,
+                      "; ",
+                      debugInfo.discord.build,
+                      " (",
+                      debugInfo.discord.version,
+                      "); ",
+                      debugInfo.bunny.version
+                    ]
+                  })
                 ]
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsxs(import_react_native14.ScrollView, {
-            fadingEdgeLength: 64,
-            contentContainerStyle: {
-              gap: 12
-            },
-            children: [
-              /* @__PURE__ */ jsx(Codeblock, {
-                selectable: true,
-                children: props.error.message
               }),
-              hasStack(props.error) && /* @__PURE__ */ jsx(ErrorStackCard, {
-                error: props.error
+              /* @__PURE__ */ jsxs(import_react_native14.ScrollView, {
+                fadingEdgeLength: 64,
+                contentContainerStyle: {
+                  gap: 12
+                },
+                children: [
+                  /* @__PURE__ */ jsx(Codeblock, {
+                    selectable: true,
+                    children: props.error.message
+                  }),
+                  hasStack(props.error) && /* @__PURE__ */ jsx(ErrorStackCard, {
+                    error: props.error
+                  }),
+                  isComponentStack(props.error) ? /* @__PURE__ */ jsx(ErrorComponentStackCard, {
+                    componentStack: props.error.componentStack
+                  }) : null
+                ]
               }),
-              isComponentStack(props.error) ? /* @__PURE__ */ jsx(ErrorComponentStackCard, {
-                componentStack: props.error.componentStack
-              }) : null
-            ]
-          }),
-          /* @__PURE__ */ jsxs(Card, {
-            style: {
-              gap: 6
-            },
-            children: [
-              /* @__PURE__ */ jsx(Button, {
-                text: "Reload Discord",
-                onPress: () => BundleUpdaterManager.reload()
-              }),
-              !settings.safeMode?.enabled && /* @__PURE__ */ jsx(Button, {
-                text: "Reload in Safe Mode",
-                onPress: () => toggleSafeMode()
-              }),
-              /* @__PURE__ */ jsx(Button, {
-                variant: "destructive",
-                text: "Retry Render",
-                onPress: () => props.rerender()
+              /* @__PURE__ */ jsxs(Card, {
+                style: {
+                  gap: 6
+                },
+                children: [
+                  /* @__PURE__ */ jsx(Button, {
+                    text: "Reload Discord",
+                    onPress: () => BundleUpdaterManager.reload()
+                  }),
+                  !settings.safeMode?.enabled && /* @__PURE__ */ jsx(Button, {
+                    text: "Reload in Safe Mode",
+                    onPress: () => toggleSafeMode()
+                  }),
+                  /* @__PURE__ */ jsx(Button, {
+                    variant: "destructive",
+                    text: "Retry Render",
+                    onPress: () => props.rerender()
+                  })
+                ]
               })
             ]
           })
@@ -15035,7 +15041,7 @@
             uri: pyoncord_default
           },
           render: () => Promise.resolve().then(() => (init_General(), General_exports)),
-          useTrailing: () => `(${"b37ff5b-dev"})`
+          useTrailing: () => `(${"bc1a023-dev"})`
         },
         {
           key: "BUNNY_PLUGINS",
@@ -15511,7 +15517,7 @@
         alert([
           "Failed to load Bunny!\n",
           `Build Number: ${ClientInfoManager2.Build}`,
-          `Bunny: ${"b37ff5b-dev"}`,
+          `Bunny: ${"bc1a023-dev"}`,
           stack || e?.toString?.()
         ].join("\n"));
       }
