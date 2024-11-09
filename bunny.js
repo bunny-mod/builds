@@ -264,27 +264,6 @@
     }
   });
 
-  // node_modules/.pnpm/es-toolkit@1.21.0/node_modules/es-toolkit/dist/array/chunk.mjs
-  function chunk(arr, size) {
-    if (!Number.isInteger(size) || size <= 0) {
-      throw new Error("Size must be an integer greater than zero.");
-    }
-    var chunkLength = Math.ceil(arr.length / size);
-    var result = Array(chunkLength);
-    for (var index = 0; index < chunkLength; index++) {
-      var start = index * size;
-      var end = start + size;
-      result[index] = arr.slice(start, end);
-    }
-    return result;
-  }
-  var init_chunk = __esm({
-    "node_modules/.pnpm/es-toolkit@1.21.0/node_modules/es-toolkit/dist/array/chunk.mjs"() {
-      init_asyncIteratorSymbol();
-      init_promiseAllSettled();
-    }
-  });
-
   // node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_get_prototype_of.js
   function _get_prototype_of(o) {
     _get_prototype_of = Object.setPrototypeOf ? Object.getPrototypeOf : function getPrototypeOf(o2) {
@@ -605,7 +584,6 @@
     "node_modules/.pnpm/es-toolkit@1.21.0/node_modules/es-toolkit/dist/index.mjs"() {
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
-      init_chunk();
       init_debounce();
       init_omit();
       init_isNotNil();
@@ -2322,9 +2300,9 @@
       var backend = createFileBackend2(path);
       if (yield backend.exists()) {
         _loadedStorage[path] = yield backend.get();
-        return false;
+        return true;
       }
-      return true;
+      return false;
     });
     return _preloadStorageIfExists.apply(this, arguments);
   }
@@ -4619,7 +4597,7 @@
       init_logger();
       init_toasts();
       import_react_native5 = __toESM(require_react_native());
-      versionHash = "bc1a023-dev";
+      versionHash = "795639a-dev";
     }
   });
 
@@ -8570,7 +8548,7 @@
       return up;
     };
   }
-  function createBunnyPluginAPI(id) {
+  function createBunnyPluginApi(id) {
     var disposers = new Array();
     var object = {
       ...window.bunny,
@@ -8627,6 +8605,7 @@
     initPlugins: () => initPlugins,
     installPlugin: () => installPlugin,
     isCorePlugin: () => isCorePlugin,
+    isGreaterVersion: () => isGreaterVersion,
     isPluginEnabled: () => isPluginEnabled,
     isPluginInstalled: () => isPluginInstalled,
     pluginInstances: () => pluginInstances,
@@ -8637,6 +8616,7 @@
     startPlugin: () => startPlugin,
     stopPlugin: () => stopPlugin,
     uninstallPlugin: () => uninstallPlugin,
+    updateAllRepository: () => updateAllRepository,
     updateAndWritePlugin: () => updateAndWritePlugin,
     updatePlugins: () => updatePlugins,
     updateRepository: () => updateRepository
@@ -8645,7 +8625,7 @@
     if (!condition)
       throw new Error(`[${id}] Attempted to ${attempt}`);
   }
-  function newerThan(v1, v2) {
+  function isGreaterVersion(v1, v2) {
     if (semver.gt(v1, v2))
       return true;
     var coerced = semver.coerce(v1);
@@ -8736,13 +8716,13 @@
       }
       yield Promise.all(Object.keys(repo).map(/* @__PURE__ */ function() {
         var _ref = _async_to_generator(function* (pluginId) {
-          if (!storedRepo || !storedRepo[pluginId] || repo[pluginId].alwaysFetch || newerThan(repo[pluginId].version, storedRepo[pluginId].version)) {
+          if (!storedRepo || !storedRepo[pluginId] || repo[pluginId].alwaysFetch || isGreaterVersion(repo[pluginId].version, storedRepo[pluginId].version)) {
             updated = true;
             pluginRepositories[repoUrl][pluginId] = repo[pluginId];
             yield updateAndWritePlugin(repoUrl, pluginId, Boolean(storedRepo && pluginSettings[pluginId]));
           } else {
             var manifest2 = yield preloadStorageIfExists(`plugins/manifests/${pluginId}.json`);
-            if (manifest2 === void 0) {
+            if (!manifest2) {
               yield updateAndWritePlugin(repoUrl, pluginId, Boolean(storedRepo && pluginSettings[pluginId]));
             }
           }
@@ -8756,7 +8736,7 @@
         if (manifest === void 0)
           continue;
         var existing = registeredPlugins.get(id1);
-        if (existing && !newerThan(manifest.version, existing.version)) {
+        if (existing && !isGreaterVersion(manifest.version, existing.version)) {
           continue;
         }
         registeredPlugins.set(id1, manifest);
@@ -8779,10 +8759,12 @@
         if (isPluginInstalled(id)) {
           promQueues.push(uninstallPlugin(id));
         }
+        promQueues.push(purgeStorage2(`plugins/manifests/${id}.json`));
         registeredPlugins.delete(id);
       }
       delete pluginRepositories[repoUrl];
       yield Promise.all(promQueues);
+      updateAllRepository();
     });
     return _deleteRepository.apply(this, arguments);
   }
@@ -8792,9 +8774,9 @@
   function _enablePlugin() {
     _enablePlugin = _async_to_generator(function* (id, start) {
       assert(isPluginInstalled(id), id, "enable a non-installed plugin");
-      pluginSettings[id].enabled = true;
       if (start)
         yield startPlugin(id);
+      pluginSettings[id].enabled = true;
     });
     return _enablePlugin.apply(this, arguments);
   }
@@ -8840,11 +8822,11 @@
     return _startPlugin.apply(this, arguments);
   }
   function _startPlugin() {
-    _startPlugin = _async_to_generator(function* (id) {
+    _startPlugin = _async_to_generator(function* (id, { throwIfDisabled = false, disableWhenThrown = true } = {}) {
       var manifest = registeredPlugins.get(id);
       assert(manifest, id, "start a non-registered plugin");
       assert(isPluginInstalled(id), id, "start a non-installed plugin");
-      assert(pluginSettings[id]?.enabled, id, "start a disabled plugin");
+      assert(!throwIfDisabled || pluginSettings[id]?.enabled, id, "start a disabled plugin");
       assert(!pluginInstances.has(id), id, "start an already started plugin");
       yield preloadStorageIfExists(`plugins/storage/${id}.json`);
       var pluginInstance2;
@@ -8858,7 +8840,7 @@
           });
         }
         try {
-          var api = createBunnyPluginAPI(id);
+          var api = createBunnyPluginApi(id);
           pluginInstance2 = instantiator(api.object, (p) => {
             return Object.assign(p, {
               manifest
@@ -8880,7 +8862,9 @@
       }
       try {
         pluginInstance2.start?.();
+        pluginSettings[id].enabled = true;
       } catch (error) {
+        disableWhenThrown && disablePlugin(id);
         throw new Error("An error occured while starting the plugin", {
           cause: error
         });
@@ -9316,183 +9300,6 @@
       init_promiseAllSettled();
       init_plugins();
       init_storage();
-    }
-  });
-
-  // node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_async_iterator.js
-  function _async_iterator(iterable) {
-    var method, async, sync, retry = 2;
-    for ("undefined" != typeof Symbol && (async = asyncIteratorSymbol, sync = Symbol.iterator); retry--; ) {
-      if (async && null != (method = iterable[async]))
-        return method.call(iterable);
-      if (sync && null != (method = iterable[sync]))
-        return new AsyncFromSyncIterator(method.call(iterable));
-      async = "@@asyncIterator", sync = "@@iterator";
-    }
-    throw new TypeError("Object is not async iterable");
-  }
-  function AsyncFromSyncIterator(s) {
-    function AsyncFromSyncIteratorContinuation(r) {
-      if (Object(r) !== r)
-        return Promise.reject(new TypeError(r + " is not an object."));
-      var done = r.done;
-      return Promise.resolve(r.value).then(function(value) {
-        return {
-          value,
-          done
-        };
-      });
-    }
-    return AsyncFromSyncIterator = function AsyncFromSyncIterator2(s2) {
-      this.s = s2, this.n = s2.next;
-    }, AsyncFromSyncIterator.prototype = {
-      s: null,
-      n: null,
-      next: function next() {
-        return AsyncFromSyncIteratorContinuation(this.n.apply(this.s, arguments));
-      },
-      return: function _return(value) {
-        var ret = this.s.return;
-        return void 0 === ret ? Promise.resolve({
-          value,
-          done: true
-        }) : AsyncFromSyncIteratorContinuation(ret.apply(this.s, arguments));
-      },
-      throw: function _throw(value) {
-        var thr = this.s.return;
-        return void 0 === thr ? Promise.reject(value) : AsyncFromSyncIteratorContinuation(thr.apply(this.s, arguments));
-      }
-    }, new AsyncFromSyncIterator(s);
-  }
-  var init_async_iterator = __esm({
-    "node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_async_iterator.js"() {
-      init_asyncIteratorSymbol();
-      init_promiseAllSettled();
-    }
-  });
-
-  // node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_await_value.js
-  function _await_value(value) {
-    this.wrapped = value;
-  }
-  var init_await_value = __esm({
-    "node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_await_value.js"() {
-      init_asyncIteratorSymbol();
-      init_promiseAllSettled();
-    }
-  });
-
-  // node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_await_async_generator.js
-  function _await_async_generator(value) {
-    return new _await_value(value);
-  }
-  var init_await_async_generator = __esm({
-    "node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_await_async_generator.js"() {
-      init_asyncIteratorSymbol();
-      init_promiseAllSettled();
-      init_await_value();
-    }
-  });
-
-  // node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_async_generator.js
-  function _async_generator(gen) {
-    var front, back;
-    function send(key, arg) {
-      return new Promise(function(resolve, reject) {
-        var request = {
-          key,
-          arg,
-          resolve,
-          reject,
-          next: null
-        };
-        if (back)
-          back = back.next = request;
-        else {
-          front = back = request;
-          resume(key, arg);
-        }
-      });
-    }
-    function resume(key, arg) {
-      try {
-        var result = gen[key](arg);
-        var value = result.value;
-        var wrappedAwait = value instanceof _await_value;
-        Promise.resolve(wrappedAwait ? value.wrapped : value).then(function(arg2) {
-          if (wrappedAwait) {
-            resume("next", arg2);
-            return;
-          }
-          settle(result.done ? "return" : "normal", arg2);
-        }, function(err) {
-          resume("throw", err);
-        });
-      } catch (err) {
-        settle("throw", err);
-      }
-    }
-    function settle(type, value) {
-      switch (type) {
-        case "return":
-          front.resolve({
-            value,
-            done: true
-          });
-          break;
-        case "throw":
-          front.reject(value);
-          break;
-        default:
-          front.resolve({
-            value,
-            done: false
-          });
-          break;
-      }
-      front = front.next;
-      if (front)
-        resume(front.key, front.arg);
-      else
-        back = null;
-    }
-    this._invoke = send;
-    if (typeof gen.return !== "function")
-      this.return = void 0;
-  }
-  var init_async_generator = __esm({
-    "node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_async_generator.js"() {
-      init_asyncIteratorSymbol();
-      init_promiseAllSettled();
-      init_await_value();
-      if (typeof Symbol === "function" && asyncIteratorSymbol) {
-        _async_generator.prototype[asyncIteratorSymbol] = function() {
-          return this;
-        };
-      }
-      _async_generator.prototype.next = function(arg) {
-        return this._invoke("next", arg);
-      };
-      _async_generator.prototype.throw = function(arg) {
-        return this._invoke("throw", arg);
-      };
-      _async_generator.prototype.return = function(arg) {
-        return this._invoke("return", arg);
-      };
-    }
-  });
-
-  // node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_wrap_async_generator.js
-  function _wrap_async_generator(fn) {
-    return function() {
-      return new _async_generator(fn.apply(this, arguments));
-    };
-  }
-  var init_wrap_async_generator = __esm({
-    "node_modules/.pnpm/@swc+helpers@0.5.13/node_modules/@swc/helpers/esm/_wrap_async_generator.js"() {
-      init_asyncIteratorSymbol();
-      init_promiseAllSettled();
-      init_async_generator();
     }
   });
 
@@ -13000,69 +12807,16 @@
   __export(PluginBrowser_exports, {
     default: () => PluginBrowser
   });
-  function arrayFromAsync(iterableOrArrayLike) {
-    return _arrayFromAsync.apply(this, arguments);
-  }
-  function _arrayFromAsync() {
-    _arrayFromAsync = _async_to_generator(function* (iterableOrArrayLike) {
-      var arr = [];
-      {
-        var _iteratorAbruptCompletion = false, _didIteratorError = false, _iteratorError;
-        try {
-          for (var _iterator = _async_iterator(iterableOrArrayLike), _step; _iteratorAbruptCompletion = !(_step = yield _iterator.next()).done; _iteratorAbruptCompletion = false) {
-            var _value = _step.value;
-            var element = _value;
-            arr.push(element);
-          }
-        } catch (err) {
-          _didIteratorError = true;
-          _iteratorError = err;
-        } finally {
-          try {
-            if (_iteratorAbruptCompletion && _iterator.return != null) {
-              yield _iterator.return();
-            }
-          } finally {
-            if (_didIteratorError) {
-              throw _iteratorError;
-            }
-          }
-        }
-      }
-      return arr;
-    });
-    return _arrayFromAsync.apply(this, arguments);
-  }
-  function fetchManifest(repoURL, id) {
-    return _fetchManifest.apply(this, arguments);
-  }
-  function _fetchManifest() {
-    _fetchManifest = _async_to_generator(function* (repoURL, id) {
-      var url2 = new URL(`builds/${id}/manifest.json`, repoURL);
-      var data = yield safeFetch(url2).then((d) => d.json());
-      queryClient.setQueryData([
-        "plugin-manifest-dist",
-        {
-          id
-        }
-      ], data);
-      return data;
-    });
-    return _fetchManifest.apply(this, arguments);
-  }
-  function getManifests(repoUrl) {
+  function getManifests() {
     return _getManifests.apply(this, arguments);
   }
   function _getManifests() {
-    _getManifests = _wrap_async_generator(function* (repoUrl) {
-      var rawResponse = yield _await_async_generator(safeFetch(repoUrl));
-      var pluginIds = Object.keys(yield _await_async_generator(rawResponse.json()));
-      for (var idChunks of chunk(pluginIds, 5)) {
-        var manifests = idChunks.map((id) => fetchManifest(OFFICIAL_PLUGINS_REPO_URL, id));
-        for (var manifest of manifests) {
-          yield yield _await_async_generator(manifest);
-        }
-      }
+    _getManifests = _async_to_generator(function* () {
+      yield updateAllRepository();
+      var plugins2 = [
+        ...registeredPlugins.values()
+      ];
+      return plugins2.filter((p) => !isCorePlugin(p.id));
     });
     return _getManifests.apply(this, arguments);
   }
@@ -13103,6 +12857,17 @@
         /* @__PURE__ */ jsx(IconButton, {
           size: "sm",
           onPress: () => {
+            showSheet("plugin-info", () => {
+              return /* @__PURE__ */ jsx(ActionSheet, {
+                children: /* @__PURE__ */ jsx(TableRowGroup, {
+                  title: "Plugin Info",
+                  children: /* @__PURE__ */ jsx(TableRow, {
+                    label: "ID",
+                    subLabel: props.id
+                  })
+                })
+              });
+            });
           },
           variant: "secondary",
           icon: findAssetId("CircleInformationIcon")
@@ -13114,83 +12879,78 @@
     });
   }
   function PluginCard2(props) {
-    var { isPending, error, data: plugin } = useQuery({
-      queryKey: [
-        "plugin-manifest-dist",
-        {
-          id: props.id
-        }
-      ],
-      queryFn: () => fetchManifest(props.repoUrl, props.id)
-    });
-    return /* @__PURE__ */ jsxs(Card, {
-      children: [
-        !plugin && /* @__PURE__ */ jsx(import_react_native21.View, {
-          style: {
-            justifyContent: "center",
-            alignItems: "center"
-          },
-          children: /* @__PURE__ */ jsxs(Text, {
-            color: "text-muted",
-            variant: "heading-lg/semibold",
+    var { display, version } = props.manifest;
+    return /* @__PURE__ */ jsx(Card, {
+      children: /* @__PURE__ */ jsxs(Stack, {
+        spacing: 16,
+        children: [
+          /* @__PURE__ */ jsxs(import_react_native21.View, {
+            style: {
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center"
+            },
             children: [
-              isPending && "Loading...",
-              error && `An error has occured while fetching plugin: ${error.message}`
-            ]
-          })
-        }),
-        plugin && /* @__PURE__ */ jsxs(Stack, {
-          spacing: 16,
-          children: [
-            /* @__PURE__ */ jsxs(import_react_native21.View, {
-              style: {
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center"
-              },
-              children: [
-                /* @__PURE__ */ jsxs(import_react_native21.View, {
-                  style: {
-                    flexShrink: 1
-                  },
-                  children: [
-                    /* @__PURE__ */ jsx(Text, {
-                      numberOfLines: 1,
-                      variant: "heading-lg/semibold",
-                      children: plugin.display.name
-                    }),
-                    /* @__PURE__ */ jsxs(Text, {
-                      variant: "text-md/semibold",
-                      color: "text-muted",
-                      children: [
-                        "by ",
-                        plugin.display.authors?.map((a) => typeof a === "string" ? a : a.name).join(", ") ?? "Unknown"
-                      ]
-                    })
-                  ]
-                }),
-                /* @__PURE__ */ jsx(import_react_native21.View, {
-                  children: /* @__PURE__ */ jsx(TrailingButtons, {
-                    id: props.id
+              /* @__PURE__ */ jsxs(import_react_native21.View, {
+                style: {
+                  flexShrink: 1
+                },
+                children: [
+                  /* @__PURE__ */ jsx(Text, {
+                    numberOfLines: 1,
+                    variant: "heading-lg/semibold",
+                    children: display.name
+                  }),
+                  /* @__PURE__ */ jsxs(Text, {
+                    variant: "text-md/semibold",
+                    color: "text-muted",
+                    children: [
+                      "by ",
+                      display.authors?.map((a) => a.name).join(", ") || "Unknown",
+                      " (",
+                      version,
+                      ")"
+                    ]
                   })
+                ]
+              }),
+              /* @__PURE__ */ jsx(import_react_native21.View, {
+                children: /* @__PURE__ */ jsx(TrailingButtons, {
+                  id: props.manifest.id
                 })
-              ]
-            }),
-            /* @__PURE__ */ jsx(Text, {
-              variant: "text-md/medium",
-              children: plugin.display.description
-            })
-          ]
-        })
-      ]
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx(Text, {
+            variant: "text-md/medium",
+            children: display.description
+          })
+        ]
+      })
     });
   }
   function BrowserPage() {
+    var navigation2 = NavigationNative.useNavigation();
+    (0, import_react6.useEffect)(() => {
+      navigation2.setOptions({
+        title: "Plugin Browser",
+        headerRight: () => /* @__PURE__ */ jsx(IconButton, {
+          size: "sm",
+          variant: "secondary",
+          icon: findAssetId("PlusSmallIcon"),
+          onPress: () => {
+            showSheet("plugin-browser-options", PluginBrowserOptions);
+          }
+        })
+      });
+    }, [
+      navigation2
+    ]);
     var { data, error, isPending, refetch } = useQuery({
       queryKey: [
         "plugins-repo-fetch"
       ],
-      queryFn: () => arrayFromAsync(getManifests(OFFICIAL_PLUGINS_REPO_URL))
+      queryFn: () => getManifests()
     });
     if (error) {
       return /* @__PURE__ */ jsx(import_react_native21.View, {
@@ -13245,10 +13005,113 @@
           paddingHorizontal: 8
         },
         children: /* @__PURE__ */ jsx(PluginCard2, {
-          repoUrl: OFFICIAL_PLUGINS_REPO_URL,
-          id: manifest.id,
           manifest
         })
+      })
+    });
+  }
+  function AddRepositoryAlert() {
+    var [value, setValue] = (0, import_react6.useState)("");
+    return /* @__PURE__ */ jsx(AlertModal, {
+      title: "Add Repository",
+      content: "Enter the URL of the repository you want to add.",
+      extraContent: /* @__PURE__ */ jsx(TextInput, {
+        value,
+        onChange: setValue,
+        placeholder: "https://example.com/repo.json"
+      }),
+      actions: /* @__PURE__ */ jsx(AlertActions, {
+        children: /* @__PURE__ */ jsx(AlertActionButton2, {
+          text: "Add",
+          variant: "primary",
+          disabled: !isValidHttpUrl(value),
+          onPress: /* @__PURE__ */ _async_to_generator(function* () {
+            try {
+              yield updateRepository(value);
+              showToast("Added repository!", findAssetId("Check"));
+            } catch (e) {
+              showToast("Failed to add repository!", findAssetId("Small"));
+            } finally {
+              dismissAlert("bunny-add-plugin-repository");
+              showSheet("plugin-browser-options", PluginBrowserOptions);
+            }
+          })
+        })
+      })
+    });
+  }
+  function PluginBrowserOptions() {
+    return /* @__PURE__ */ jsx(ActionSheet, {
+      children: /* @__PURE__ */ jsxs(TableRowGroup, {
+        title: "Repositories",
+        children: [
+          Object.keys(pluginRepositories).map((url2) => {
+            return /* @__PURE__ */ jsx(RepositoryRow, {
+              url: url2
+            }, url2);
+          }),
+          /* @__PURE__ */ jsx(TableRow, {
+            label: "Add Repository...",
+            icon: /* @__PURE__ */ jsx(TableRow.Icon, {
+              source: findAssetId("PlusMediumIcon")
+            }),
+            onPress: () => {
+              openAlert("bunny-add-plugin-repository", /* @__PURE__ */ jsx(AddRepositoryAlert, {}));
+              hideSheet("plugin-browser-options");
+            }
+          })
+        ]
+      })
+    });
+  }
+  function RepositoryRow(props) {
+    var repo = pluginRepositories[props.url];
+    var isOfficial = props.url === OFFICIAL_PLUGINS_REPO_URL;
+    return /* @__PURE__ */ jsx(TableRow, {
+      label: isOfficial ? "Bunny's Repository" : repo.$meta?.name ?? "Unknown",
+      subLabel: props.url,
+      trailing: /* @__PURE__ */ jsxs(Stack, {
+        direction: "horizontal",
+        children: [
+          /* @__PURE__ */ jsx(IconButton, {
+            size: "sm",
+            variant: "secondary",
+            icon: findAssetId("LinkIcon"),
+            onPress: () => {
+              clipboard.setString(props.url);
+              showToast.showCopyToClipboard();
+            }
+          }),
+          /* @__PURE__ */ jsx(IconButton, {
+            size: "sm",
+            variant: "destructive",
+            disabled: isOfficial,
+            icon: findAssetId("TrashIcon"),
+            onPress: () => {
+              openAlert("bunny-remove-repository", /* @__PURE__ */ jsx(AlertModal, {
+                title: "Remove Repository",
+                content: "Are you sure you want to remove this repository?",
+                extraContent: /* @__PURE__ */ jsx(Card, {
+                  children: /* @__PURE__ */ jsx(Text, {
+                    variant: "text-md/normal",
+                    children: props.url
+                  })
+                }),
+                actions: /* @__PURE__ */ jsx(AlertActions, {
+                  children: /* @__PURE__ */ jsx(AlertActionButton2, {
+                    text: "Remove",
+                    variant: "destructive",
+                    onPress: /* @__PURE__ */ _async_to_generator(function* () {
+                      yield deleteRepository(props.url);
+                      showToast("Removed repository!", findAssetId("Trash"));
+                      dismissAlert("bunny-remove-repository");
+                    })
+                  })
+                })
+              }));
+            }
+          })
+        ]
       })
     });
   }
@@ -13264,19 +13127,19 @@
       "use strict";
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
-      init_async_iterator();
       init_async_to_generator();
-      init_await_async_generator();
-      init_wrap_async_generator();
       init_jsxRuntime();
       init_plugins4();
       init_assets();
+      init_alerts();
+      init_wrappers2();
+      init_sheets();
       init_toasts();
-      init_utils();
       init_constants();
+      init_isValidHttpUrl();
+      init_common();
       init_components();
       init_modern2();
-      init_dist();
       import_react6 = __toESM(require_react());
       import_react_native21 = __toESM(require_react_native());
       queryClient = new QueryClient();
@@ -15041,7 +14904,7 @@
             uri: pyoncord_default
           },
           render: () => Promise.resolve().then(() => (init_General(), General_exports)),
-          useTrailing: () => `(${"bc1a023-dev"})`
+          useTrailing: () => `(${"795639a-dev"})`
         },
         {
           key: "BUNNY_PLUGINS",
@@ -15517,7 +15380,7 @@
         alert([
           "Failed to load Bunny!\n",
           `Build Number: ${ClientInfoManager2.Build}`,
-          `Bunny: ${"bc1a023-dev"}`,
+          `Bunny: ${"795639a-dev"}`,
           stack || e?.toString?.()
         ].join("\n"));
       }
