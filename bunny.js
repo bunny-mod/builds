@@ -4597,7 +4597,7 @@
       init_logger();
       init_toasts();
       import_react_native5 = __toESM(require_react_native());
-      versionHash = "795639a-dev";
+      versionHash = "e141a62-dev";
     }
   });
 
@@ -8542,11 +8542,16 @@
 
   // src/lib/addons/plugins/api.ts
   function shimDisposableFn(unpatches, f) {
-    return (...props) => {
+    var dummy = (...props) => {
       var up = f(...props);
       unpatches.push(up);
       return up;
     };
+    for (var key in f)
+      if (typeof f[key] === "function") {
+        dummy[key] = shimDisposableFn(unpatches, f[key]);
+      }
+    return dummy;
   }
   function createBunnyPluginApi(id) {
     var disposers = new Array();
@@ -8714,7 +8719,8 @@
             delete storedRepo[plugin];
           }
       }
-      yield Promise.all(Object.keys(repo).map(/* @__PURE__ */ function() {
+      var pluginIds = Object.keys(repo).filter((id2) => !id2.startsWith("$"));
+      yield Promise.all(pluginIds.map(/* @__PURE__ */ function() {
         var _ref = _async_to_generator(function* (pluginId) {
           if (!storedRepo || !storedRepo[pluginId] || repo[pluginId].alwaysFetch || isGreaterVersion(repo[pluginId].version, storedRepo[pluginId].version)) {
             updated = true;
@@ -8731,7 +8737,7 @@
           return _ref.apply(this, arguments);
         };
       }()));
-      for (var id1 in repo) {
+      for (var id1 of pluginIds) {
         var manifest = getPreloadedStorage(`plugins/manifests/${id1}.json`);
         if (manifest === void 0)
           continue;
@@ -9068,7 +9074,11 @@
         ]);
       },
       toggle(start) {
-        start ? enablePlugin(manifest.id, true) : disablePlugin(manifest.id);
+        try {
+          start ? enablePlugin(manifest.id, true) : disablePlugin(manifest.id);
+        } catch (e) {
+          console.error(e);
+        }
       },
       resolveSheetComponent() {
         return Promise.resolve().then(() => (init_PluginInfoActionSheet(), PluginInfoActionSheet_exports));
@@ -14904,7 +14914,7 @@
             uri: pyoncord_default
           },
           render: () => Promise.resolve().then(() => (init_General(), General_exports)),
-          useTrailing: () => `(${"795639a-dev"})`
+          useTrailing: () => `(${"e141a62-dev"})`
         },
         {
           key: "BUNNY_PLUGINS",
@@ -15380,7 +15390,7 @@
         alert([
           "Failed to load Bunny!\n",
           `Build Number: ${ClientInfoManager2.Build}`,
-          `Bunny: ${"795639a-dev"}`,
+          `Bunny: ${"e141a62-dev"}`,
           stack || e?.toString?.()
         ].join("\n"));
       }
