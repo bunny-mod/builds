@@ -3216,6 +3216,8 @@
           semanticDef = _colorRef.current.semantic[SEMANTIC_FALLBACK_MAP[name]];
         }
         if (semanticDef?.value) {
+          if (semanticDef.opacity === 1)
+            return semanticDef.value;
           return (0, import_chroma_js3.default)(semanticDef.value).alpha(semanticDef.opacity).hex();
         }
         var rawValue = _colorRef.current.raw[colorDef.raw];
@@ -4597,7 +4599,7 @@
       init_logger();
       init_toasts();
       import_react_native5 = __toESM(require_react_native());
-      versionHash = "e141a62-dev";
+      versionHash = "c7e4495-dev";
     }
   });
 
@@ -14914,7 +14916,7 @@
             uri: pyoncord_default
           },
           render: () => Promise.resolve().then(() => (init_General(), General_exports)),
-          useTrailing: () => `(${"e141a62-dev"})`
+          useTrailing: () => `(${"c7e4495-dev"})`
         },
         {
           key: "BUNNY_PLUGINS",
@@ -15390,7 +15392,7 @@
         alert([
           "Failed to load Bunny!\n",
           `Build Number: ${ClientInfoManager2.Build}`,
-          `Bunny: ${"e141a62-dev"}`,
+          `Bunny: ${"c7e4495-dev"}`,
           stack || e?.toString?.()
         ].join("\n"));
       }
