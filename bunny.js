@@ -255,7 +255,7 @@
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
       nmp = window.nativeModuleProxy;
-      MMKVManager = nmp.MMKVManager;
+      MMKVManager = nmp.NativeCacheModule ?? nmp.MMKVManager;
       FileManager = nmp.NativeFileModule ?? nmp.RTNFileManager ?? nmp.DCDFileManager;
       ClientInfoManager = nmp.NativeClientInfoModule ?? nmp.RTNClientInfoManager ?? nmp.InfoDictionaryManager;
       DeviceManager = nmp.NativeDeviceModule ?? nmp.RTNDeviceManager ?? nmp.DCDDeviceManager;
@@ -2748,9 +2748,10 @@
     TextArea: () => TextArea,
     TextInput: () => TextInput,
     TwinButtons: () => TwinButtons,
+    useSafeAreaInsets: () => useSafeAreaInsets,
     useSegmentedControlState: () => useSegmentedControlState
   });
-  var bySingularProp, findSingular, findProp, LegacyAlert, CompatButton, HelpMessage, SafeAreaView, SafeAreaProvider, ActionSheetRow, Button, TwinButtons, IconButton, RowButton, PressableScale, TableRow, TableRowIcon, TableRowTrailingText, TableRowGroup, TableRadioGroup, TableRadioRow, TableSwitchRow, TableCheckboxRow, TableSwitch, TableRadio, TableCheckbox, FormSwitch, FormRadio, FormCheckbox, Card, RedesignCompat, AlertModal, AlertActionButton, AlertActions, AvatarPile, Stack, Avatar, TextInput, TextArea, SegmentedControl, SegmentedControlPages, useSegmentedControlState, CompatSegmentedControl, FloatingActionButton, ActionSheet, BottomSheetTitleHeader, textsModule, Text, Forms, LegacyForm, LegacyFormArrow, LegacyFormCTA, LegacyFormCTAButton, LegacyFormCardSection, LegacyFormCheckbox, LegacyFormCheckboxRow, LegacyFormCheckmark, LegacyFormDivider, LegacyFormHint, LegacyFormIcon, LegacyFormInput, LegacyFormLabel, LegacyFormRadio, LegacyFormRadioGroup, LegacyFormRadioRow, LegacyFormRow, LegacyFormSection, LegacyFormSelect, LegacyFormSliderRow, LegacyFormSubLabel, LegacyFormSwitch, LegacyFormSwitchRow, LegacyFormTernaryCheckBox, LegacyFormText, LegacyFormTitle, FlashList;
+  var bySingularProp, findSingular, findProp, LegacyAlert, CompatButton, HelpMessage, SafeAreaView, SafeAreaProvider, useSafeAreaInsets, ActionSheetRow, Button, TwinButtons, IconButton, RowButton, PressableScale, TableRow, TableRowIcon, TableRowTrailingText, TableRowGroup, TableRadioGroup, TableRadioRow, TableSwitchRow, TableCheckboxRow, TableSwitch, TableRadio, TableCheckbox, FormSwitch, FormRadio, FormCheckbox, Card, RedesignCompat, AlertModal, AlertActionButton, AlertActions, AvatarPile, Stack, Avatar, TextInput, TextArea, SegmentedControl, SegmentedControlPages, useSegmentedControlState, CompatSegmentedControl, FloatingActionButton, ActionSheet, BottomSheetTitleHeader, textsModule, Text, Forms, LegacyForm, LegacyFormArrow, LegacyFormCTA, LegacyFormCTAButton, LegacyFormCardSection, LegacyFormCheckbox, LegacyFormCheckboxRow, LegacyFormCheckmark, LegacyFormDivider, LegacyFormHint, LegacyFormIcon, LegacyFormInput, LegacyFormLabel, LegacyFormRadio, LegacyFormRadioGroup, LegacyFormRadioRow, LegacyFormRow, LegacyFormSection, LegacyFormSelect, LegacyFormSliderRow, LegacyFormSubLabel, LegacyFormSwitch, LegacyFormSwitchRow, LegacyFormTernaryCheckBox, LegacyFormText, LegacyFormTitle, FlashList;
   var init_components = __esm({
     "src/metro/common/components.ts"() {
       "use strict";
@@ -2766,7 +2767,7 @@
       LegacyAlert = findByDisplayNameLazy("FluxContainer(Alert)");
       CompatButton = findByPropsLazy("Looks", "Colors", "Sizes");
       HelpMessage = findByNameLazy("HelpMessage");
-      ({ SafeAreaView, SafeAreaProvider } = lazyDestructure(() => findByProps("useSafeAreaInsets")));
+      ({ SafeAreaView, SafeAreaProvider, useSafeAreaInsets } = lazyDestructure(() => findByProps("useSafeAreaInsets")));
       ActionSheetRow = findProp("ActionSheetRow");
       Button = findSingular("Button");
       TwinButtons = findProp("TwinButtons");
@@ -4599,7 +4600,7 @@
       init_logger();
       init_toasts();
       import_react_native5 = __toESM(require_react_native());
-      versionHash = "c7e4495-dev";
+      versionHash = "92caf89-dev";
     }
   });
 
@@ -7116,6 +7117,7 @@
   function AddonPage({ CardComponent, ...props }) {
     var [search, setSearch] = React.useState("");
     var [sortFn, setSortFn] = React.useState(() => null);
+    var { bottom: bottomInset } = useSafeAreaInsets();
     var navigation2 = NavigationNative.useNavigation();
     (0, import_react3.useEffect)(() => {
       if (props.OptionsActionSheetComponent) {
@@ -7287,6 +7289,7 @@
           })
         }),
         props.installAction && /* @__PURE__ */ jsx(FloatingActionButton, {
+          positionBottom: bottomInset + 8,
           icon: findAssetId("PlusLargeIcon"),
           onPress: onInstallPress
         })
@@ -14916,7 +14919,7 @@
             uri: pyoncord_default
           },
           render: () => Promise.resolve().then(() => (init_General(), General_exports)),
-          useTrailing: () => `(${"c7e4495-dev"})`
+          useTrailing: () => `(${"92caf89-dev"})`
         },
         {
           key: "BUNNY_PLUGINS",
@@ -15392,7 +15395,7 @@
         alert([
           "Failed to load Bunny!\n",
           `Build Number: ${ClientInfoManager2.Build}`,
-          `Bunny: ${"c7e4495-dev"}`,
+          `Bunny: ${"92caf89-dev"}`,
           stack || e?.toString?.()
         ].join("\n"));
       }
