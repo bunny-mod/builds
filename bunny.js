@@ -242,25 +242,117 @@
   var modules_exports = {};
   __export(modules_exports, {
     BundleUpdaterManager: () => BundleUpdaterManager,
-    ClientInfoManager: () => ClientInfoManager,
-    DeviceManager: () => DeviceManager,
-    FileManager: () => FileManager,
-    MMKVManager: () => MMKVManager,
-    ThemeManager: () => ThemeManager
+    NativeCacheModule: () => NativeCacheModule,
+    NativeClientInfoModule: () => NativeClientInfoModule,
+    NativeDeviceModule: () => NativeDeviceModule,
+    NativeFileModule: () => NativeFileModule,
+    NativeThemeModule: () => NativeThemeModule
   });
-  var nmp, MMKVManager, FileManager, ClientInfoManager, DeviceManager, BundleUpdaterManager, ThemeManager;
+  var nmp, NativeCacheModule, NativeFileModule, NativeClientInfoModule, NativeDeviceModule, NativeThemeModule, BundleUpdaterManager;
   var init_modules = __esm({
     "src/lib/api/native/modules/index.ts"() {
       "use strict";
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
       nmp = window.nativeModuleProxy;
-      MMKVManager = nmp.NativeCacheModule ?? nmp.MMKVManager;
-      FileManager = nmp.NativeFileModule ?? nmp.RTNFileManager ?? nmp.DCDFileManager;
-      ClientInfoManager = nmp.NativeClientInfoModule ?? nmp.RTNClientInfoManager ?? nmp.InfoDictionaryManager;
-      DeviceManager = nmp.NativeDeviceModule ?? nmp.RTNDeviceManager ?? nmp.DCDDeviceManager;
+      NativeCacheModule = nmp.NativeCacheModule ?? nmp.MMKVManager;
+      NativeFileModule = nmp.NativeFileModule ?? nmp.RTNFileManager ?? nmp.DCDFileManager;
+      NativeClientInfoModule = nmp.NativeClientInfoModule ?? nmp.RTNClientInfoManager ?? nmp.InfoDictionaryManager;
+      NativeDeviceModule = nmp.NativeDeviceModule ?? nmp.RTNDeviceManager ?? nmp.DCDDeviceManager;
+      NativeThemeModule = nmp.NativeThemeModule ?? nmp.RTNThemeManager ?? nmp.DCDTheme;
       ({ BundleUpdaterManager } = nmp);
-      ThemeManager = nmp.NativeThemeModule ?? nmp.RTNThemeManager ?? nmp.DCDTheme;
+    }
+  });
+
+  // src/lib/api/native/fs.ts
+  var fs_exports = {};
+  __export(fs_exports, {
+    clearFolder: () => clearFolder,
+    downloadFile: () => downloadFile,
+    fileExists: () => fileExists,
+    readFile: () => readFile,
+    removeFile: () => removeFile,
+    writeFile: () => writeFile
+  });
+  function clearFolder(path) {
+    return _clearFolder.apply(this, arguments);
+  }
+  function _clearFolder() {
+    _clearFolder = _async_to_generator(function* (path, { prefix = "pyoncord/" } = {}) {
+      if (typeof NativeFileModule.clearFolder !== "function")
+        throw new Error("'fs.clearFolder' is not supported");
+      return void (yield NativeFileModule.clearFolder("documents", `${prefix}${path}`));
+    });
+    return _clearFolder.apply(this, arguments);
+  }
+  function removeFile(path) {
+    return _removeFile.apply(this, arguments);
+  }
+  function _removeFile() {
+    _removeFile = _async_to_generator(function* (path, { prefix = "pyoncord/" } = {}) {
+      if (typeof NativeFileModule.removeFile !== "function")
+        throw new Error("'fs.removeFile' is not supported");
+      return void (yield NativeFileModule.removeFile("documents", `${prefix}${path}`));
+    });
+    return _removeFile.apply(this, arguments);
+  }
+  function fileExists(path) {
+    return _fileExists.apply(this, arguments);
+  }
+  function _fileExists() {
+    _fileExists = _async_to_generator(function* (path, { prefix = "pyoncord/" } = {}) {
+      return yield NativeFileModule.fileExists(`${NativeFileModule.getConstants().DocumentsDirPath}/${prefix}${path}`);
+    });
+    return _fileExists.apply(this, arguments);
+  }
+  function writeFile(path, data) {
+    return _writeFile.apply(this, arguments);
+  }
+  function _writeFile() {
+    _writeFile = _async_to_generator(function* (path, data, { prefix = "pyoncord/" } = {}) {
+      if (typeof data !== "string")
+        throw new Error("Argument 'data' must be a string");
+      return void (yield NativeFileModule.writeFile("documents", `${prefix}${path}`, data, "utf8"));
+    });
+    return _writeFile.apply(this, arguments);
+  }
+  function readFile(path) {
+    return _readFile.apply(this, arguments);
+  }
+  function _readFile() {
+    _readFile = _async_to_generator(function* (path, { prefix = "pyoncord/" } = {}) {
+      try {
+        return yield NativeFileModule.readFile(`${NativeFileModule.getConstants().DocumentsDirPath}/${prefix}${path}`, "utf8");
+      } catch (err) {
+        throw new Error(`An error occured while writing to '${path}'`, {
+          cause: err
+        });
+      }
+    });
+    return _readFile.apply(this, arguments);
+  }
+  function downloadFile(url2, path) {
+    return _downloadFile.apply(this, arguments);
+  }
+  function _downloadFile() {
+    _downloadFile = _async_to_generator(function* (url2, path, { prefix = "pyoncord/" } = {}) {
+      var response = yield fetch(url2);
+      if (!response.ok) {
+        throw new Error(`Failed to download file from ${url2}: ${response.statusText}`);
+      }
+      var arrayBuffer = yield response.arrayBuffer();
+      var data = Buffer.from(arrayBuffer).toString("base64");
+      yield NativeFileModule.writeFile("documents", `${prefix}${path}`, data, "base64");
+    });
+    return _downloadFile.apply(this, arguments);
+  }
+  var init_fs = __esm({
+    "src/lib/api/native/fs.ts"() {
+      "use strict";
+      init_asyncIteratorSymbol();
+      init_promiseAllSettled();
+      init_async_to_generator();
+      init_modules();
     }
   });
 
@@ -600,6 +692,7 @@
       (function(ModuleFlags2) {
         ModuleFlags2[ModuleFlags2["EXISTS"] = 1] = "EXISTS";
         ModuleFlags2[ModuleFlags2["BLACKLISTED"] = 2] = "BLACKLISTED";
+        ModuleFlags2[ModuleFlags2["ASSET"] = 4] = "ASSET";
       })(ModuleFlags || (ModuleFlags = {}));
       (function(ModulesMapInternal2) {
         ModulesMapInternal2[ModulesMapInternal2["FULL_LOOKUP"] = 0] = "FULL_LOOKUP";
@@ -670,76 +763,32 @@
     }
   });
 
-  // src/lib/api/assets.ts
-  var assets_exports = {};
-  __export(assets_exports, {
-    assetsMap: () => assetsMap,
-    findAsset: () => findAsset,
-    findAssetId: () => findAssetId,
+  // src/lib/api/assets/patches.ts
+  var patches_exports = {};
+  __export(patches_exports, {
+    assetsModule: () => assetsModule,
     patchAssets: () => patchAssets
   });
   function patchAssets(module) {
     if (assetsModule)
       return;
     assetsModule = module;
-    var unpatch = after("registerAsset", assetsModule, ([asset]) => {
+    var unpatch = after("registerAsset", assetsModule, () => {
       var moduleId = getImportingModuleId();
       if (moduleId !== -1)
-        indexAssetName(asset.name, moduleId);
+        indexAssetModuleFlag(moduleId);
     });
     return unpatch;
   }
-  function findAsset(param) {
-    if (typeof param === "number")
-      return assetsModule.getAssetByID(param);
-    if (typeof param === "string")
-      return assetsMap[param];
-    return Object.values(assetsMap).find(param);
-  }
-  function findAssetId(name) {
-    return assetsMap[name]?.index;
-  }
-  var assetsMap, assetsModule;
-  var init_assets = __esm({
-    "src/lib/api/assets.ts"() {
+  var assetsModule;
+  var init_patches = __esm({
+    "src/lib/api/assets/patches.ts"() {
       "use strict";
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
       init_patcher();
       init_caches();
       init_modules2();
-      assetsMap = new Proxy({}, {
-        get(cache, p) {
-          if (typeof p !== "string")
-            return void 0;
-          if (cache[p])
-            return cache[p];
-          var moduleIds = getMetroCache().assetsIndex[p];
-          if (moduleIds == null)
-            return void 0;
-          for (var id in moduleIds) {
-            var assetIndex = requireModule(Number(id));
-            if (typeof assetIndex !== "number")
-              continue;
-            var assetDefinition = assetsModule.getAssetByID(assetIndex);
-            if (!assetDefinition)
-              continue;
-            assetDefinition.index ??= assetDefinition.id ??= assetIndex;
-            assetDefinition.moduleId ??= id;
-            cache[p] ??= assetDefinition;
-          }
-          return cache[p];
-        },
-        ownKeys(cache) {
-          var keys = [];
-          for (var key in getMetroCache().assetsIndex) {
-            cache[key] = this.get(cache, key, {});
-            if (cache[key])
-              keys.push(key);
-          }
-          return keys;
-        }
-      });
     }
   });
 
@@ -1399,7 +1448,7 @@
       ILLEGAL_CHARS_REGEX = /[<>:"/\\|?*]/g;
       filePathFixer = (file) => import_react_native.Platform.select({
         default: file,
-        ios: FileManager.saveFileToGallery ? file : `Documents/${file}`
+        ios: NativeFileModule.saveFileToGallery ? file : `Documents/${file}`
       });
       getMMKVPath = (name) => {
         if (ILLEGAL_CHARS_REGEX.test(name)) {
@@ -1409,12 +1458,12 @@
       };
       purgeStorage = /* @__PURE__ */ function() {
         var _ref = _async_to_generator(function* (store) {
-          if (yield MMKVManager.getItem(store)) {
-            MMKVManager.removeItem(store);
+          if (yield NativeCacheModule.getItem(store)) {
+            NativeCacheModule.removeItem(store);
           }
           var mmkvPath = getMMKVPath(store);
-          if (yield FileManager.fileExists(`${FileManager.getConstants().DocumentsDirPath}/${mmkvPath}`)) {
-            yield FileManager.removeFile?.("documents", mmkvPath);
+          if (yield NativeFileModule.fileExists(`${NativeFileModule.getConstants().DocumentsDirPath}/${mmkvPath}`)) {
+            yield NativeFileModule.removeFile?.("documents", mmkvPath);
           }
         });
         return function purgeStorage3(store) {
@@ -1425,14 +1474,14 @@
         var mmkvPath = getMMKVPath(store);
         var defaultStr = JSON.stringify(defaultData);
         return createFileBackend(mmkvPath, defaultData, _async_to_generator(function* () {
-          var path = `${FileManager.getConstants().DocumentsDirPath}/${mmkvPath}`;
-          if (yield FileManager.fileExists(path))
+          var path = `${NativeFileModule.getConstants().DocumentsDirPath}/${mmkvPath}`;
+          if (yield NativeFileModule.fileExists(path))
             return;
-          var oldData = (yield MMKVManager.getItem(store)) ?? defaultStr;
+          var oldData = (yield NativeCacheModule.getItem(store)) ?? defaultStr;
           if (oldData === "!!LARGE_VALUE!!") {
-            var cachePath = `${FileManager.getConstants().CacheDirPath}/mmkv/${store}`;
-            if (yield FileManager.fileExists(cachePath)) {
-              oldData = yield FileManager.readFile(cachePath, "utf8");
+            var cachePath = `${NativeFileModule.getConstants().CacheDirPath}/mmkv/${store}`;
+            if (yield NativeFileModule.fileExists(cachePath)) {
+              oldData = yield NativeFileModule.readFile(cachePath, "utf8");
             } else {
               console.log(`${store}: Experienced data loss :(`);
               oldData = defaultStr;
@@ -1444,9 +1493,9 @@
             console.error(`${store} had an unparseable data while migrating`);
             oldData = defaultStr;
           }
-          yield FileManager.writeFile("documents", filePathFixer(mmkvPath), oldData, "utf8");
-          if ((yield MMKVManager.getItem(store)) !== null) {
-            MMKVManager.removeItem(store);
+          yield NativeFileModule.writeFile("documents", filePathFixer(mmkvPath), oldData, "utf8");
+          if ((yield NativeCacheModule.getItem(store)) !== null) {
+            NativeCacheModule.removeItem(store);
             console.log(`Successfully migrated ${store} store from MMKV storage to fs`);
           }
         })());
@@ -1455,21 +1504,21 @@
         return {
           get: /* @__PURE__ */ _async_to_generator(function* () {
             yield migratePromise;
-            var path = `${FileManager.getConstants().DocumentsDirPath}/${file}`;
-            if (yield FileManager.fileExists(path)) {
-              var content = yield FileManager.readFile(path, "utf8");
+            var path = `${NativeFileModule.getConstants().DocumentsDirPath}/${file}`;
+            if (yield NativeFileModule.fileExists(path)) {
+              var content = yield NativeFileModule.readFile(path, "utf8");
               try {
                 return JSON.parse(content);
               } catch (e) {
               }
             }
-            yield FileManager.writeFile("documents", filePathFixer(file), JSON.stringify(defaultData), "utf8");
-            return JSON.parse(yield FileManager.readFile(path, "utf8"));
+            yield NativeFileModule.writeFile("documents", filePathFixer(file), JSON.stringify(defaultData), "utf8");
+            return JSON.parse(yield NativeFileModule.readFile(path, "utf8"));
           }),
           set: /* @__PURE__ */ function() {
             var _ref = _async_to_generator(function* (data) {
               yield migratePromise;
-              yield FileManager.writeFile("documents", filePathFixer(file), JSON.stringify(data), "utf8");
+              yield NativeFileModule.writeFile("documents", filePathFixer(file), JSON.stringify(data), "utf8");
             });
             return function(data) {
               return _ref.apply(this, arguments);
@@ -1477,98 +1526,6 @@
           }()
         };
       };
-    }
-  });
-
-  // src/lib/api/native/fs.ts
-  var fs_exports = {};
-  __export(fs_exports, {
-    clearFolder: () => clearFolder,
-    downloadFile: () => downloadFile,
-    fileExists: () => fileExists,
-    readFile: () => readFile,
-    removeFile: () => removeFile,
-    writeFile: () => writeFile
-  });
-  function clearFolder(path) {
-    return _clearFolder.apply(this, arguments);
-  }
-  function _clearFolder() {
-    _clearFolder = _async_to_generator(function* (path, { prefix = "pyoncord/" } = {}) {
-      if (typeof FileManager.clearFolder !== "function")
-        throw new Error("'fs.clearFolder' is not supported");
-      return void (yield FileManager.clearFolder("documents", `${prefix}${path}`));
-    });
-    return _clearFolder.apply(this, arguments);
-  }
-  function removeFile(path) {
-    return _removeFile.apply(this, arguments);
-  }
-  function _removeFile() {
-    _removeFile = _async_to_generator(function* (path, { prefix = "pyoncord/" } = {}) {
-      if (typeof FileManager.removeFile !== "function")
-        throw new Error("'fs.removeFile' is not supported");
-      return void (yield FileManager.removeFile("documents", `${prefix}${path}`));
-    });
-    return _removeFile.apply(this, arguments);
-  }
-  function fileExists(path) {
-    return _fileExists.apply(this, arguments);
-  }
-  function _fileExists() {
-    _fileExists = _async_to_generator(function* (path, { prefix = "pyoncord/" } = {}) {
-      return yield FileManager.fileExists(`${FileManager.getConstants().DocumentsDirPath}/${prefix}${path}`);
-    });
-    return _fileExists.apply(this, arguments);
-  }
-  function writeFile(path, data) {
-    return _writeFile.apply(this, arguments);
-  }
-  function _writeFile() {
-    _writeFile = _async_to_generator(function* (path, data, { prefix = "pyoncord/" } = {}) {
-      if (typeof data !== "string")
-        throw new Error("Argument 'data' must be a string");
-      return void (yield FileManager.writeFile("documents", `${prefix}${path}`, data, "utf8"));
-    });
-    return _writeFile.apply(this, arguments);
-  }
-  function readFile(path) {
-    return _readFile.apply(this, arguments);
-  }
-  function _readFile() {
-    _readFile = _async_to_generator(function* (path, { prefix = "pyoncord/" } = {}) {
-      try {
-        return yield FileManager.readFile(`${FileManager.getConstants().DocumentsDirPath}/${prefix}${path}`, "utf8");
-      } catch (err) {
-        throw new Error(`An error occured while writing to '${path}'`, {
-          cause: err
-        });
-      }
-    });
-    return _readFile.apply(this, arguments);
-  }
-  function downloadFile(url2, path) {
-    return _downloadFile.apply(this, arguments);
-  }
-  function _downloadFile() {
-    _downloadFile = _async_to_generator(function* (url2, path, { prefix = "pyoncord/" } = {}) {
-      var response = yield fetch(url2);
-      if (!response.ok) {
-        throw new Error(`Failed to download file from ${url2}: ${response.statusText}`);
-      }
-      var arrayBuffer = yield response.arrayBuffer();
-      var data = Buffer.from(arrayBuffer).toString("base64");
-      return void (yield FileManager.writeFile("documents", `${prefix}${path}`, data, "base64"));
-    });
-    return _downloadFile.apply(this, arguments);
-  }
-  var init_fs = __esm({
-    "src/lib/api/native/fs.ts"() {
-      "use strict";
-      init_asyncIteratorSymbol();
-      init_promiseAllSettled();
-      init_async_to_generator();
-      init_modules();
     }
   });
 
@@ -2690,6 +2647,7 @@
     Card: () => Card,
     CompatButton: () => CompatButton,
     CompatSegmentedControl: () => CompatSegmentedControl,
+    ContextMenu: () => ContextMenu,
     FlashList: () => FlashList,
     FloatingActionButton: () => FloatingActionButton,
     FormCheckbox: () => FormCheckbox,
@@ -2751,7 +2709,7 @@
     useSafeAreaInsets: () => useSafeAreaInsets,
     useSegmentedControlState: () => useSegmentedControlState
   });
-  var bySingularProp, findSingular, findProp, LegacyAlert, CompatButton, HelpMessage, SafeAreaView, SafeAreaProvider, useSafeAreaInsets, ActionSheetRow, Button, TwinButtons, IconButton, RowButton, PressableScale, TableRow, TableRowIcon, TableRowTrailingText, TableRowGroup, TableRadioGroup, TableRadioRow, TableSwitchRow, TableCheckboxRow, TableSwitch, TableRadio, TableCheckbox, FormSwitch, FormRadio, FormCheckbox, Card, RedesignCompat, AlertModal, AlertActionButton, AlertActions, AvatarPile, Stack, Avatar, TextInput, TextArea, SegmentedControl, SegmentedControlPages, useSegmentedControlState, CompatSegmentedControl, FloatingActionButton, ActionSheet, BottomSheetTitleHeader, textsModule, Text, Forms, LegacyForm, LegacyFormArrow, LegacyFormCTA, LegacyFormCTAButton, LegacyFormCardSection, LegacyFormCheckbox, LegacyFormCheckboxRow, LegacyFormCheckmark, LegacyFormDivider, LegacyFormHint, LegacyFormIcon, LegacyFormInput, LegacyFormLabel, LegacyFormRadio, LegacyFormRadioGroup, LegacyFormRadioRow, LegacyFormRow, LegacyFormSection, LegacyFormSelect, LegacyFormSliderRow, LegacyFormSubLabel, LegacyFormSwitch, LegacyFormSwitchRow, LegacyFormTernaryCheckBox, LegacyFormText, LegacyFormTitle, FlashList;
+  var bySingularProp, findSingular, findProp, LegacyAlert, CompatButton, HelpMessage, SafeAreaView, SafeAreaProvider, useSafeAreaInsets, ActionSheetRow, Button, TwinButtons, IconButton, RowButton, PressableScale, TableRow, TableRowIcon, TableRowTrailingText, TableRowGroup, TableRadioGroup, TableRadioRow, TableSwitchRow, TableCheckboxRow, TableSwitch, TableRadio, TableCheckbox, FormSwitch, FormRadio, FormCheckbox, Card, RedesignCompat, AlertModal, AlertActionButton, AlertActions, AvatarPile, ContextMenu, Stack, Avatar, TextInput, TextArea, SegmentedControl, SegmentedControlPages, useSegmentedControlState, CompatSegmentedControl, FloatingActionButton, ActionSheet, BottomSheetTitleHeader, textsModule, Text, Forms, LegacyForm, LegacyFormArrow, LegacyFormCTA, LegacyFormCTAButton, LegacyFormCardSection, LegacyFormCheckbox, LegacyFormCheckboxRow, LegacyFormCheckmark, LegacyFormDivider, LegacyFormHint, LegacyFormIcon, LegacyFormInput, LegacyFormLabel, LegacyFormRadio, LegacyFormRadioGroup, LegacyFormRadioRow, LegacyFormRow, LegacyFormSection, LegacyFormSelect, LegacyFormSliderRow, LegacyFormSubLabel, LegacyFormSwitch, LegacyFormSwitchRow, LegacyFormTernaryCheckBox, LegacyFormText, LegacyFormTitle, FlashList;
   var init_components = __esm({
     "src/metro/common/components.ts"() {
       "use strict";
@@ -2794,6 +2752,7 @@
       AlertActionButton = findProp("AlertActionButton");
       AlertActions = findProp("AlertActions");
       AvatarPile = findSingular("AvatarPile");
+      ContextMenu = findProp("ContextMenu");
       Stack = findProp("Stack");
       Avatar = findProp("default", "AvatarSizes", "getStatusSize");
       TextInput = findSingular("TextInput");
@@ -2818,6 +2777,7 @@
   __export(common_exports, {
     Flux: () => Flux,
     FluxDispatcher: () => FluxDispatcher,
+    FluxUtils: () => FluxUtils,
     NavigationNative: () => NavigationNative,
     React: () => React2,
     ReactNative: () => ReactNative,
@@ -2835,14 +2795,16 @@
     semver: () => semver,
     toasts: () => toasts,
     tokens: () => tokens,
-    url: () => url
+    url: () => url,
+    useToken: () => useToken
   });
-  var constants, channels, i18n, url, clipboard, assets, invites, commands, navigation, toasts, messageUtil, navigationStack, NavigationNative, tokens, semver, Flux, FluxDispatcher, React2, ReactNative;
+  var constants, channels, i18n, url, clipboard, assets, invites, commands, navigation, toasts, messageUtil, navigationStack, NavigationNative, semver, tokens, useToken, Flux, FluxDispatcher, FluxUtils, React2, ReactNative;
   var init_common = __esm({
     "src/metro/common/index.ts"() {
       "use strict";
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
+      init_lazy();
       init_wrappers();
       init_components();
       constants = findByPropsLazy("Fonts", "Permissions");
@@ -2858,10 +2820,12 @@
       messageUtil = findByPropsLazy("sendBotMessage");
       navigationStack = findByPropsLazy("createStackNavigator");
       NavigationNative = findByPropsLazy("NavigationContainer");
-      tokens = findByPropsLazy("colors", "unsafe_rawColors");
       semver = findByPropsLazy("parse", "clean");
+      tokens = findByPropsLazy("unsafe_rawColors", "colors");
+      ({ useToken } = lazyDestructure(() => findByProps("useToken")));
       Flux = findByPropsLazy("connectStores");
       FluxDispatcher = findByProps("_interceptors");
+      FluxUtils = findByProps("useStateFromStores");
       React2 = window.React = findByPropsLazy("createElement");
       ReactNative = window.ReactNative = findByPropsLazy("AppRegistry");
     }
@@ -3204,7 +3168,7 @@
     var unpatches = [
       before("isThemeDark", isThemeModule, callback),
       before("isThemeLight", isThemeModule, callback),
-      before("updateTheme", ThemeManager, callback),
+      before("updateTheme", NativeThemeModule, callback),
       instead("resolveSemanticColor", tokenReference.default.meta ?? tokenReference.default.internal, (args, orig) => {
         if (!_colorRef.current)
           return orig(...args);
@@ -3882,7 +3846,7 @@
     if (moduleExports.default?.track && moduleExports.default.trackMaker)
       moduleExports.default.track = () => Promise.resolve();
     if (moduleExports.registerAsset) {
-      (init_assets(), __toCommonJS(assets_exports)).patchAssets(moduleExports);
+      (init_patches(), __toCommonJS(patches_exports)).patchAssets(moduleExports);
     }
     if (!patchedNativeComponentRegistry && [
       "customBubblingEventTypes",
@@ -4038,7 +4002,7 @@
       _loop = function(key) {
         var id = Number(key);
         var metroModule = metroModules[id];
-        var cache = getMetroCache().exportsIndex[id];
+        var cache = getMetroCache().flagsIndex[id];
         if (cache & ModuleFlags.BLACKLISTED) {
           blacklistModule(id);
           return "continue";
@@ -4100,7 +4064,7 @@
     getCacherForUniq: () => getCacherForUniq,
     getMetroCache: () => getMetroCache,
     getPolyfillModuleCacher: () => getPolyfillModuleCacher,
-    indexAssetName: () => indexAssetName,
+    indexAssetModuleFlag: () => indexAssetModuleFlag,
     indexBlacklistFlag: () => indexBlacklistFlag,
     indexExportsFlags: () => indexExportsFlags,
     initMetroCache: () => initMetroCache
@@ -4108,12 +4072,11 @@
   function buildInitCache() {
     var cache = {
       _v: CACHE_VERSION,
-      _buildNumber: ClientInfoManager.Build,
+      _buildNumber: NativeClientInfoModule.Build,
       _modulesCount: Object.keys(window.modules).length,
-      exportsIndex: {},
+      flagsIndex: {},
       findIndex: {},
-      polyfillIndex: {},
-      assetsIndex: {}
+      polyfillIndex: {}
     };
     setTimeout(() => {
       for (var id in window.modules) {
@@ -4128,16 +4091,16 @@
   }
   function _initMetroCache() {
     _initMetroCache = _async_to_generator(function* () {
-      var rawCache = yield MMKVManager.getItem(BUNNY_METRO_CACHE_KEY);
-      if (rawCache == null)
+      if (!(yield fileExists(BUNNY_METRO_CACHE_PATH)))
         return void buildInitCache();
+      var rawCache = yield readFile(BUNNY_METRO_CACHE_PATH);
       try {
         _metroCache = JSON.parse(rawCache);
         if (_metroCache._v !== CACHE_VERSION) {
           _metroCache = null;
           throw "cache invalidated; cache version outdated";
         }
-        if (_metroCache._buildNumber !== ClientInfoManager.Build) {
+        if (_metroCache._buildNumber !== NativeClientInfoModule.Build) {
           _metroCache = null;
           throw "cache invalidated; version mismatch";
         }
@@ -4160,11 +4123,14 @@
   function indexExportsFlags(moduleId, moduleExports) {
     var flags = extractExportsFlags(moduleExports);
     if (flags && flags !== ModuleFlags.EXISTS) {
-      _metroCache.exportsIndex[moduleId] = flags;
+      _metroCache.flagsIndex[moduleId] = flags;
     }
   }
   function indexBlacklistFlag(id) {
-    _metroCache.exportsIndex[id] |= ModuleFlags.BLACKLISTED;
+    _metroCache.flagsIndex[id] |= ModuleFlags.BLACKLISTED;
+  }
+  function indexAssetModuleFlag(id) {
+    _metroCache.flagsIndex[id] |= ModuleFlags.ASSET;
   }
   function getCacherForUniq(uniq, allFind) {
     var indexObject = _metroCache.findIndex[uniq] ??= {};
@@ -4199,28 +4165,23 @@
       }
     };
   }
-  function indexAssetName(name, moduleId) {
-    if (!isNaN(moduleId)) {
-      (_metroCache.assetsIndex[name] ??= {})[moduleId] = 1;
-      saveCache();
-    }
-  }
-  var CACHE_VERSION, BUNNY_METRO_CACHE_KEY, _metroCache, getMetroCache, saveCache;
+  var CACHE_VERSION, BUNNY_METRO_CACHE_PATH, _metroCache, getMetroCache, saveCache;
   var init_caches = __esm({
     "src/metro/internals/caches.ts"() {
       "use strict";
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
       init_async_to_generator();
+      init_fs();
       init_modules();
       init_dist();
       init_enums();
-      CACHE_VERSION = 52;
-      BUNNY_METRO_CACHE_KEY = "__bunny_metro_cache_key__";
+      CACHE_VERSION = 100;
+      BUNNY_METRO_CACHE_PATH = "caches/metro_modules.json";
       _metroCache = null;
       getMetroCache = window.__getMetroCache = () => _metroCache;
       saveCache = debounce(() => {
-        MMKVManager.setItem(BUNNY_METRO_CACHE_KEY, JSON.stringify(_metroCache));
+        writeFile(BUNNY_METRO_CACHE_PATH, JSON.stringify(_metroCache));
       }, 1e3);
     }
   });
@@ -4237,6 +4198,76 @@
       "use strict";
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
+    }
+  });
+
+  // src/lib/api/assets/index.ts
+  var assets_exports = {};
+  __export(assets_exports, {
+    filterAssets: () => filterAssets,
+    findAsset: () => findAsset,
+    findAssetId: () => findAssetId,
+    iterateAssets: () => iterateAssets
+  });
+  function* iterateAssets() {
+    var { flagsIndex } = getMetroCache();
+    var yielded = /* @__PURE__ */ new Set();
+    for (var id in flagsIndex) {
+      if (flagsIndex[id] & ModuleFlags.ASSET) {
+        var assetId = requireModule(Number(id));
+        if (typeof assetId !== "number" || yielded.has(assetId))
+          continue;
+        yield getAssetById(assetId);
+        yielded.add(assetId);
+      }
+    }
+  }
+  function getAssetById(id) {
+    var asset = assetsModule.getAssetByID(id);
+    if (!asset)
+      return asset;
+    return Object.assign(asset, {
+      id
+    });
+  }
+  function findAsset(param) {
+    if (typeof param === "number")
+      return getAssetById(param);
+    if (typeof param === "string" && _nameToAssetCache[param]) {
+      return _nameToAssetCache[param];
+    }
+    for (var asset of iterateAssets()) {
+      if (typeof param === "string" && asset.name === param) {
+        _nameToAssetCache[param] = asset;
+        return asset;
+      } else if (typeof param === "function" && param(asset)) {
+        return asset;
+      }
+    }
+  }
+  function filterAssets(param) {
+    var filteredAssets = [];
+    for (var asset of iterateAssets()) {
+      if (typeof param === "string" ? asset.name === param : param(asset)) {
+        filteredAssets.push(asset);
+      }
+    }
+    return filteredAssets;
+  }
+  function findAssetId(name) {
+    return findAsset(name)?.id;
+  }
+  var _nameToAssetCache;
+  var init_assets = __esm({
+    "src/lib/api/assets/index.ts"() {
+      "use strict";
+      init_asyncIteratorSymbol();
+      init_promiseAllSettled();
+      init_caches();
+      init_enums();
+      init_modules2();
+      init_patches();
+      _nameToAssetCache = {};
     }
   });
 
@@ -4537,8 +4568,8 @@
         }
       },
       discord: {
-        version: ClientInfoManager.Version,
-        build: ClientInfoManager.Build
+        version: NativeClientInfoModule.Version,
+        build: NativeClientInfoModule.Build
       },
       react: {
         version: React.version,
@@ -4570,15 +4601,15 @@
             manufacturer: PlatformConstants.Manufacturer,
             brand: PlatformConstants.Brand,
             model: PlatformConstants.Model,
-            codename: DeviceManager.device
+            codename: NativeDeviceModule.device
           }
         },
         ios: {
           device: {
-            manufacturer: DeviceManager.deviceManufacturer,
-            brand: DeviceManager.deviceBrand,
-            model: DeviceManager.deviceModel,
-            codename: DeviceManager.device
+            manufacturer: NativeDeviceModule.deviceManufacturer,
+            brand: NativeDeviceModule.deviceBrand,
+            model: NativeDeviceModule.deviceModel,
+            codename: NativeDeviceModule.device
           }
         }
       })
@@ -4600,7 +4631,7 @@
       init_logger();
       init_toasts();
       import_react_native5 = __toESM(require_react_native());
-      versionHash = "92caf89-dev";
+      versionHash = "c168237-dev";
     }
   });
 
@@ -5429,81 +5460,78 @@
     var styles = useStyles2();
     var debugInfo = getDebugInfo();
     return /* @__PURE__ */ jsx(ErrorBoundary, {
-      children: /* @__PURE__ */ jsxs(SafeAreaProvider, {
-        children: [
-          " ",
-          /* @__PURE__ */ jsxs(SafeAreaView, {
-            style: styles.container,
-            children: [
-              /* @__PURE__ */ jsxs(import_react_native14.View, {
-                style: {
-                  gap: 4
-                },
-                children: [
-                  /* @__PURE__ */ jsx(Text, {
-                    variant: "display-lg",
-                    children: "Uh oh."
-                  }),
-                  /* @__PURE__ */ jsx(Text, {
-                    variant: "text-md/normal",
-                    children: "A crash occurred while rendering a component. This could be caused by a plugin, Bunny or Discord itself."
-                  }),
-                  /* @__PURE__ */ jsxs(Text, {
-                    variant: "text-sm/normal",
-                    color: "text-muted",
-                    children: [
-                      debugInfo.os.name,
-                      "; ",
-                      debugInfo.discord.build,
-                      " (",
-                      debugInfo.discord.version,
-                      "); ",
-                      debugInfo.bunny.version
-                    ]
-                  })
-                ]
-              }),
-              /* @__PURE__ */ jsxs(import_react_native14.ScrollView, {
-                fadingEdgeLength: 64,
-                contentContainerStyle: {
-                  gap: 12
-                },
-                children: [
-                  /* @__PURE__ */ jsx(Codeblock, {
-                    selectable: true,
-                    children: props.error.message
-                  }),
-                  hasStack(props.error) && /* @__PURE__ */ jsx(ErrorStackCard, {
-                    error: props.error
-                  }),
-                  isComponentStack(props.error) ? /* @__PURE__ */ jsx(ErrorComponentStackCard, {
-                    componentStack: props.error.componentStack
-                  }) : null
-                ]
-              }),
-              /* @__PURE__ */ jsxs(Card, {
-                style: {
-                  gap: 6
-                },
-                children: [
-                  /* @__PURE__ */ jsx(Button, {
-                    text: "Reload Discord",
-                    onPress: () => BundleUpdaterManager.reload()
-                  }),
-                  !settings.safeMode?.enabled && /* @__PURE__ */ jsx(Button, {
-                    text: "Reload in Safe Mode",
-                    onPress: () => toggleSafeMode()
-                  }),
-                  /* @__PURE__ */ jsx(Button, {
-                    variant: "destructive",
-                    text: "Retry Render",
-                    onPress: () => props.rerender()
-                  })
-                ]
-              })
-            ]
-          })
-        ]
+      children: /* @__PURE__ */ jsx(SafeAreaProvider, {
+        children: /* @__PURE__ */ jsxs(SafeAreaView, {
+          style: styles.container,
+          children: [
+            /* @__PURE__ */ jsxs(import_react_native14.View, {
+              style: {
+                gap: 4
+              },
+              children: [
+                /* @__PURE__ */ jsx(Text, {
+                  variant: "display-lg",
+                  children: "Uh oh."
+                }),
+                /* @__PURE__ */ jsx(Text, {
+                  variant: "text-md/normal",
+                  children: "A crash occurred while rendering a component. This could be caused by a plugin, Bunny or Discord itself."
+                }),
+                /* @__PURE__ */ jsxs(Text, {
+                  variant: "text-sm/normal",
+                  color: "text-muted",
+                  children: [
+                    debugInfo.os.name,
+                    "; ",
+                    debugInfo.discord.build,
+                    " (",
+                    debugInfo.discord.version,
+                    "); ",
+                    debugInfo.bunny.version
+                  ]
+                })
+              ]
+            }),
+            /* @__PURE__ */ jsxs(import_react_native14.ScrollView, {
+              fadingEdgeLength: 64,
+              contentContainerStyle: {
+                gap: 12
+              },
+              children: [
+                /* @__PURE__ */ jsx(Codeblock, {
+                  selectable: true,
+                  children: props.error.message
+                }),
+                hasStack(props.error) && /* @__PURE__ */ jsx(ErrorStackCard, {
+                  error: props.error
+                }),
+                isComponentStack(props.error) ? /* @__PURE__ */ jsx(ErrorComponentStackCard, {
+                  componentStack: props.error.componentStack
+                }) : null
+              ]
+            }),
+            /* @__PURE__ */ jsxs(Card, {
+              style: {
+                gap: 6
+              },
+              children: [
+                /* @__PURE__ */ jsx(Button, {
+                  text: "Reload Discord",
+                  onPress: () => BundleUpdaterManager.reload()
+                }),
+                !settings.safeMode?.enabled && /* @__PURE__ */ jsx(Button, {
+                  text: "Reload in Safe Mode",
+                  onPress: () => toggleSafeMode()
+                }),
+                /* @__PURE__ */ jsx(Button, {
+                  variant: "destructive",
+                  text: "Retry Render",
+                  onPress: () => props.rerender()
+                })
+              ]
+            })
+          ]
+        })
       })
     });
   }
@@ -5741,6 +5769,9 @@
         type: "pressable",
         title: row.title,
         icon: row.icon,
+        IconComponent: () => /* @__PURE__ */ jsx(TableRow.Icon, {
+          source: row.icon
+        }),
         usePredicate: row.usePredicate,
         useTrailing: row.useTrailing,
         onPress: wrapOnPress(row.onPress, null, row.render, row.title()),
@@ -5803,9 +5834,11 @@
       "use strict";
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
+      init_jsxRuntime();
       init_patcher();
       init_utils();
       init_common();
+      init_components();
       init_wrappers();
       init_settings2();
       init_shared();
@@ -7335,6 +7368,18 @@
           tintColor: tokens.colors.LOGO_PRIMARY,
           height: 18,
           width: 18
+        },
+        badgeIcon: {
+          tintColor: tokens.colors.LOGO_PRIMARY,
+          height: 12,
+          width: 12
+        },
+        badgesContainer: {
+          flexWrap: "wrap",
+          flexDirection: "row",
+          gap: 6,
+          borderRadius: 6,
+          padding: 4
         }
       });
     }
@@ -7376,6 +7421,7 @@
   }
   function Authors() {
     var { plugin, result } = useCardContext();
+    var styles = usePluginCardStyles();
     if (!plugin.authors)
       return null;
     var highlightedNode = result[2].highlight((m2, i) => /* @__PURE__ */ jsx(Text, {
@@ -7384,27 +7430,32 @@
       },
       children: m2
     }, i));
-    if (highlightedNode.length > 0)
-      return /* @__PURE__ */ jsxs(Text, {
-        variant: "text-md/semibold",
-        color: "text-muted",
-        children: [
-          "by ",
-          highlightedNode
-        ]
-      });
-    var children = [
-      "by "
-    ];
-    for (var author of plugin.authors) {
-      children.push(typeof author === "string" ? author : author.name);
-      children.push(", ");
-    }
-    children.pop();
-    return /* @__PURE__ */ jsx(Text, {
-      variant: "text-md/semibold",
-      color: "text-muted",
-      children
+    var badges = plugin.getBadges();
+    var authorText = highlightedNode.length > 0 ? highlightedNode : plugin.authors.map((a) => a.name).join(", ");
+    return /* @__PURE__ */ jsxs(import_react_native18.View, {
+      style: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        flexShrink: 1,
+        gap: 4
+      },
+      children: [
+        /* @__PURE__ */ jsxs(Text, {
+          variant: "text-sm/semibold",
+          color: "text-muted",
+          children: [
+            "by ",
+            authorText
+          ]
+        }),
+        badges.length > 0 && /* @__PURE__ */ jsx(import_react_native18.View, {
+          style: styles.badgesContainer,
+          children: badges.map((b3, i) => /* @__PURE__ */ jsx(import_react_native18.Image, {
+            source: b3.source,
+            style: styles.badgeIcon
+          }, i))
+        })
+      ]
     });
   }
   function Description() {
@@ -8825,6 +8876,7 @@
       assert(isExternalPlugin(manifest), id, "uninstall a core plugin");
       pluginInstances.has(id) && stopPlugin(id);
       delete pluginSettings[id];
+      yield purgeStorage2(`plugins/storage/${id}.json`);
       yield removeFile(`plugins/scripts/${id}.js`);
     });
     return _uninstallPlugin.apply(this, arguments);
@@ -8982,85 +9034,251 @@
     }
   });
 
+  // src/metro/common/stores.ts
+  var UserStore;
+  var init_stores = __esm({
+    "src/metro/common/stores.ts"() {
+      "use strict";
+      init_asyncIteratorSymbol();
+      init_promiseAllSettled();
+      init_wrappers();
+      UserStore = findByStoreNameLazy("UserStore");
+    }
+  });
+
+  // src/core/ui/settings/pages/Plugins/sheets/TitleComponent.tsx
+  function TitleComponent({ plugin }) {
+    var users = FluxUtils.useStateFromStoresArray([
+      UserStore
+    ], () => {
+      plugin.authors?.forEach((a) => a.id && maybeFetchUser(a.id));
+      return plugin.authors?.map((a) => UserStore.getUser(a.id));
+    });
+    var { authors } = plugin;
+    var authorTextNode = [];
+    if (authors) {
+      var _loop2 = function(author2) {
+        authorTextNode.push(/* @__PURE__ */ jsx(Text, {
+          onPress: () => showUserProfileActionSheet({
+            userId: author2.id
+          }),
+          variant: "text-md/medium",
+          children: author2.name
+        }));
+        authorTextNode.push(", ");
+      };
+      for (var author of authors)
+        _loop2(author);
+      authorTextNode.pop();
+    }
+    return /* @__PURE__ */ jsxs(import_react_native19.View, {
+      style: {
+        gap: 4
+      },
+      children: [
+        /* @__PURE__ */ jsx(import_react_native19.View, {
+          children: /* @__PURE__ */ jsx(Text, {
+            variant: "heading-xl/semibold",
+            children: plugin.name
+          })
+        }),
+        /* @__PURE__ */ jsx(import_react_native19.View, {
+          style: {
+            flexDirection: "row",
+            flexShrink: 1
+          },
+          children: authors?.length && /* @__PURE__ */ jsxs(import_react_native19.View, {
+            style: {
+              flexDirection: "row",
+              gap: 8,
+              alignItems: "center",
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              backgroundColor: "#00000016",
+              borderRadius: 32
+            },
+            children: [
+              users.length && /* @__PURE__ */ jsx(AvatarPile, {
+                size: "xxsmall",
+                names: plugin.authors?.map((a) => a.name),
+                totalCount: plugin.authors?.length,
+                children: users.map((a) => /* @__PURE__ */ jsx(Avatar, {
+                  size: "xxsmall",
+                  user: a
+                }))
+              }),
+              /* @__PURE__ */ jsx(Text, {
+                variant: "text-md/medium",
+                children: authorTextNode
+              })
+            ]
+          })
+        })
+      ]
+    });
+  }
+  var import_react_native19, showUserProfileActionSheet, maybeFetchUser;
+  var init_TitleComponent = __esm({
+    "src/core/ui/settings/pages/Plugins/sheets/TitleComponent.tsx"() {
+      "use strict";
+      init_asyncIteratorSymbol();
+      init_promiseAllSettled();
+      init_jsxRuntime();
+      init_lazy();
+      init_metro();
+      init_common();
+      init_components();
+      init_stores();
+      import_react_native19 = __toESM(require_react_native());
+      showUserProfileActionSheet = findByNameLazy("showUserProfileActionSheet");
+      ({ getUser: maybeFetchUser } = lazyDestructure(() => findByProps("getUser", "fetchProfile")));
+    }
+  });
+
   // src/core/ui/settings/pages/Plugins/sheets/PluginInfoActionSheet.tsx
   var PluginInfoActionSheet_exports = {};
   __export(PluginInfoActionSheet_exports, {
     default: () => PluginInfoActionSheet
   });
+  function PluginInfoIconButton(props) {
+    var { onPress } = props;
+    props.onPress &&= () => {
+      hideSheet("PluginInfoActionSheet");
+      onPress?.();
+    };
+    return /* @__PURE__ */ jsx(IconButton, {
+      ...props
+    });
+  }
   function PluginInfoActionSheet({ plugin, navigation: navigation2 }) {
     plugin.usePluginState();
     return /* @__PURE__ */ jsx(ActionSheet, {
-      children: /* @__PURE__ */ jsxs(import_react_native19.ScrollView, {
+      children: /* @__PURE__ */ jsxs(import_react_native20.ScrollView, {
         contentContainerStyle: {
-          gap: 8,
+          gap: 12,
           marginBottom: 12
         },
         children: [
-          /* @__PURE__ */ jsxs(import_react_native19.View, {
+          /* @__PURE__ */ jsxs(import_react_native20.View, {
             style: {
               flexDirection: "row",
               alignItems: "center",
-              paddingVertical: 24
+              gap: 8,
+              paddingVertical: 24,
+              justifyContent: "space-between",
+              width: "100%"
             },
             children: [
-              /* @__PURE__ */ jsxs(import_react_native19.View, {
-                style: {
-                  gap: 4
-                },
-                children: [
-                  /* @__PURE__ */ jsx(Text, {
-                    variant: "heading-xl/semibold",
-                    children: plugin.name
-                  }),
-                  /* @__PURE__ */ jsx(Text, {
-                    variant: "text-md/medium",
-                    color: "text-muted",
-                    children: plugin.description
-                  })
-                ]
+              /* @__PURE__ */ jsx(TitleComponent, {
+                plugin
               }),
-              /* @__PURE__ */ jsx(import_react_native19.View, {
-                style: {
-                  marginLeft: "auto"
-                },
-                children: plugin.getPluginSettingsComponent() && /* @__PURE__ */ jsx(Button, {
-                  size: "md",
-                  text: "Configure",
-                  variant: "secondary",
-                  icon: findAssetId("WrenchIcon"),
-                  onPress: () => {
-                    hideSheet("PluginInfoActionSheet");
-                    navigation2.push("BUNNY_CUSTOM_PAGE", {
-                      title: plugin.name,
-                      render: plugin.getPluginSettingsComponent()
-                    });
+              /* @__PURE__ */ jsx(ContextMenu, {
+                items: [
+                  {
+                    label: "Details",
+                    iconSource: findAssetId("CircleInformationIcon-primary"),
+                    action: () => {
+                    }
+                  },
+                  // {
+                  //     label: true ? "Disable Updates" : "Enable Updates",
+                  //     iconSource: true ? findAssetId("ClockXIcon") : findAssetId("ClockIcon"),
+                  //     action: () => {
+                  //     }
+                  // },
+                  {
+                    label: "Clear Data",
+                    iconSource: findAssetId("CopyIcon"),
+                    variant: "destructive",
+                    action: () => {
+                    }
+                  },
+                  {
+                    label: "Uninstall",
+                    iconSource: findAssetId("TrashIcon"),
+                    variant: "destructive",
+                    action: () => {
+                    }
                   }
+                ],
+                children: (props) => /* @__PURE__ */ jsx(IconButton, {
+                  ...props,
+                  icon: findAssetId("MoreHorizontalIcon"),
+                  variant: "secondary",
+                  size: "sm"
                 })
               })
             ]
           }),
-          /* @__PURE__ */ jsx(import_react_native19.View, {
+          /* @__PURE__ */ jsxs(import_react_native20.View, {
             style: {
               flexDirection: "row",
-              justifyContent: "center",
+              justifyContent: "space-around",
               alignContent: "center"
-            }
+            },
+            children: [
+              /* @__PURE__ */ jsx(PluginInfoIconButton, {
+                label: "Configure",
+                variant: "secondary",
+                disabled: !plugin.getPluginSettingsComponent(),
+                icon: findAssetId("WrenchIcon"),
+                onPress: () => {
+                  navigation2.push("BUNNY_CUSTOM_PAGE", {
+                    title: plugin.name,
+                    render: plugin.getPluginSettingsComponent()
+                  });
+                }
+              }),
+              /* @__PURE__ */ jsx(PluginInfoIconButton, {
+                label: "Refetch",
+                variant: "secondary",
+                icon: findAssetId("RetryIcon"),
+                onPress: () => {
+                  startPlugin(plugin.id);
+                }
+              }),
+              /* @__PURE__ */ jsx(PluginInfoIconButton, {
+                label: "Copy URL",
+                variant: "secondary",
+                icon: findAssetId("LinkIcon"),
+                onPress: () => {
+                }
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsxs(Card, {
+            children: [
+              /* @__PURE__ */ jsx(Text, {
+                variant: "text-md/semibold",
+                color: "text-primary",
+                style: {
+                  marginBottom: 4
+                },
+                children: "Description"
+              }),
+              /* @__PURE__ */ jsx(Text, {
+                variant: "text-md/medium",
+                children: plugin.description
+              })
+            ]
           })
         ]
       })
     });
   }
-  var import_react_native19;
+  var import_react_native20;
   var init_PluginInfoActionSheet = __esm({
     "src/core/ui/settings/pages/Plugins/sheets/PluginInfoActionSheet.tsx"() {
       "use strict";
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
       init_jsxRuntime();
+      init_plugins4();
       init_assets();
       init_sheets();
       init_components();
-      import_react_native19 = __toESM(require_react_native());
+      import_react_native20 = __toESM(require_react_native());
+      init_TitleComponent();
     }
   });
 
@@ -9071,6 +9289,15 @@
       name: manifest.display.name,
       description: manifest.display.description,
       authors: manifest.display.authors,
+      getBadges() {
+        return [
+          {
+            source: {
+              uri: pyoncord_default
+            }
+          }
+        ];
+      },
       isEnabled: () => isPluginEnabled(manifest.id),
       isInstalled: () => manifest.id in pluginSettings,
       usePluginState() {
@@ -9098,6 +9325,7 @@
       "use strict";
       init_asyncIteratorSymbol();
       init_promiseAllSettled();
+      init_settings3();
       init_plugins4();
       init_storage2();
     }
@@ -9113,9 +9341,9 @@
     var vdPlugin = VdPluginManager.plugins[plugin.id];
     var SettingsComponent = plugin.getPluginSettingsComponent();
     return /* @__PURE__ */ jsx(ActionSheet, {
-      children: /* @__PURE__ */ jsxs(import_react_native20.ScrollView, {
+      children: /* @__PURE__ */ jsxs(import_react_native21.ScrollView, {
         children: [
-          /* @__PURE__ */ jsxs(import_react_native20.View, {
+          /* @__PURE__ */ jsxs(import_react_native21.View, {
             style: {
               flexDirection: "row",
               alignItems: "center",
@@ -9126,7 +9354,7 @@
                 variant: "heading-xl/semibold",
                 children: plugin.name
               }),
-              /* @__PURE__ */ jsx(import_react_native20.View, {
+              /* @__PURE__ */ jsx(import_react_native21.View, {
                 style: {
                   marginLeft: "auto"
                 },
@@ -9263,7 +9491,7 @@
       })
     });
   }
-  var import_react_native20;
+  var import_react_native21;
   var init_VdPluginInfoActionSheet = __esm({
     "src/core/ui/settings/pages/Plugins/sheets/VdPluginInfoActionSheet.tsx"() {
       "use strict";
@@ -9280,7 +9508,7 @@
       init_components();
       init_sheets();
       init_toasts();
-      import_react_native20 = __toESM(require_react_native());
+      import_react_native21 = __toESM(require_react_native());
     }
   });
 
@@ -9292,6 +9520,9 @@
       description: vdPlugin.manifest.description,
       authors: vdPlugin.manifest.authors,
       icon: vdPlugin.manifest.vendetta?.icon,
+      getBadges() {
+        return [];
+      },
       isEnabled: () => vdPlugin.enabled,
       isInstalled: () => Boolean(vdPlugin && VdPluginManager.plugins[vdPlugin.id]),
       usePluginState() {
@@ -12899,14 +13130,14 @@
       children: /* @__PURE__ */ jsxs(Stack, {
         spacing: 16,
         children: [
-          /* @__PURE__ */ jsxs(import_react_native21.View, {
+          /* @__PURE__ */ jsxs(import_react_native22.View, {
             style: {
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center"
             },
             children: [
-              /* @__PURE__ */ jsxs(import_react_native21.View, {
+              /* @__PURE__ */ jsxs(import_react_native22.View, {
                 style: {
                   flexShrink: 1
                 },
@@ -12929,7 +13160,7 @@
                   })
                 ]
               }),
-              /* @__PURE__ */ jsx(import_react_native21.View, {
+              /* @__PURE__ */ jsx(import_react_native22.View, {
                 children: /* @__PURE__ */ jsx(TrailingButtons, {
                   id: props.manifest.id
                 })
@@ -12968,7 +13199,7 @@
       queryFn: () => getManifests()
     });
     if (error) {
-      return /* @__PURE__ */ jsx(import_react_native21.View, {
+      return /* @__PURE__ */ jsx(import_react_native22.View, {
         style: {
           flex: 1,
           paddingHorizontal: 8,
@@ -13014,7 +13245,7 @@
         paddingBottom: 90,
         paddingHorizontal: 5
       },
-      renderItem: ({ item: manifest }) => /* @__PURE__ */ jsx(import_react_native21.View, {
+      renderItem: ({ item: manifest }) => /* @__PURE__ */ jsx(import_react_native22.View, {
         style: {
           paddingVertical: 6,
           paddingHorizontal: 8
@@ -13136,7 +13367,7 @@
       children: /* @__PURE__ */ jsx(BrowserPage, {})
     });
   }
-  var import_react6, import_react_native21, queryClient;
+  var import_react6, import_react_native22, queryClient;
   var init_PluginBrowser = __esm({
     "src/core/ui/settings/pages/PluginBrowser/index.tsx"() {
       "use strict";
@@ -13156,7 +13387,7 @@
       init_components();
       init_modern2();
       import_react6 = __toESM(require_react());
-      import_react_native21 = __toESM(require_react_native());
+      import_react_native22 = __toESM(require_react_native());
       queryClient = new QueryClient();
     }
   });
@@ -13209,14 +13440,14 @@
         var unproxiedPlugins = Object.values(VdPluginManager.plugins).filter((p) => !p.id.startsWith(VD_PROXY_PREFIX) && !p.id.startsWith(BUNNY_PROXY_PREFIX));
         if (!unproxiedPlugins.length)
           return null;
-        return /* @__PURE__ */ jsx(import_react_native22.View, {
+        return /* @__PURE__ */ jsx(import_react_native23.View, {
           style: {
             marginVertical: 12,
             marginHorizontal: 10
           },
           children: /* @__PURE__ */ jsx(Card, {
             border: "strong",
-            children: /* @__PURE__ */ jsxs(import_react_native22.View, {
+            children: /* @__PURE__ */ jsxs(import_react_native23.View, {
               style: {
                 flex: 1,
                 justifyContent: "center",
@@ -13224,7 +13455,7 @@
                 flexDirection: "row"
               },
               children: [
-                /* @__PURE__ */ jsxs(import_react_native22.View, {
+                /* @__PURE__ */ jsxs(import_react_native23.View, {
                   style: {
                     gap: 6,
                     flexShrink: 1
@@ -13241,7 +13472,7 @@
                     })
                   ]
                 }),
-                /* @__PURE__ */ jsx(import_react_native22.View, {
+                /* @__PURE__ */ jsx(import_react_native23.View, {
                   style: {
                     marginLeft: "auto"
                   },
@@ -13261,7 +13492,7 @@
                             contentContainerStyle: {
                               padding: 8
                             },
-                            ItemSeparatorComponent: () => /* @__PURE__ */ jsx(import_react_native22.View, {
+                            ItemSeparatorComponent: () => /* @__PURE__ */ jsx(import_react_native23.View, {
                               style: {
                                 height: 8
                               }
@@ -13283,7 +13514,7 @@
           })
         });
       },
-      ListFooterComponent: () => /* @__PURE__ */ jsx(import_react_native22.View, {
+      ListFooterComponent: () => /* @__PURE__ */ jsx(import_react_native23.View, {
         style: {
           alignItems: "center",
           justifyContent: "center",
@@ -13356,7 +13587,7 @@
       }
     });
   }
-  var import_react_native22, openAlert2, AlertModal3, AlertActions2, AlertActionButton3;
+  var import_react_native23, openAlert2, AlertModal3, AlertActions2, AlertActionButton3;
   var init_Plugins = __esm({
     "src/core/ui/settings/pages/Plugins/index.tsx"() {
       "use strict";
@@ -13379,7 +13610,7 @@
       init_metro();
       init_common();
       init_components();
-      import_react_native22 = __toESM(require_react_native());
+      import_react_native23 = __toESM(require_react_native());
       init_bunny();
       init_vendetta();
       ({ openAlert: openAlert2 } = lazyDestructure(() => findByProps("openAlert", "dismissAlert")));
@@ -13394,13 +13625,13 @@
       children: /* @__PURE__ */ jsxs(Stack, {
         spacing: 16,
         children: [
-          /* @__PURE__ */ jsxs(import_react_native23.View, {
+          /* @__PURE__ */ jsxs(import_react_native24.View, {
             style: {
               flexDirection: "row",
               alignItems: "center"
             },
             children: [
-              /* @__PURE__ */ jsxs(import_react_native23.View, {
+              /* @__PURE__ */ jsxs(import_react_native24.View, {
                 style: styles.headerLeading,
                 children: [
                   /* @__PURE__ */ jsx(Text, {
@@ -13413,7 +13644,7 @@
                   })
                 ]
               }),
-              /* @__PURE__ */ jsxs(import_react_native23.View, {
+              /* @__PURE__ */ jsxs(import_react_native24.View, {
                 style: [
                   styles.headerTrailing,
                   {
@@ -13421,7 +13652,7 @@
                   }
                 ],
                 children: [
-                  /* @__PURE__ */ jsxs(import_react_native23.View, {
+                  /* @__PURE__ */ jsxs(import_react_native24.View, {
                     style: styles.actions,
                     children: [
                       props.overflowActions && /* @__PURE__ */ jsx(IconButton, {
@@ -13458,7 +13689,7 @@
                   props.toggleType && (props.toggleType === "switch" ? /* @__PURE__ */ jsx(FormSwitch, {
                     value: props.toggleValue(),
                     onValueChange: props.onToggleChange
-                  }) : /* @__PURE__ */ jsx(import_react_native23.TouchableOpacity, {
+                  }) : /* @__PURE__ */ jsx(import_react_native24.TouchableOpacity, {
                     onPress: () => {
                       props.onToggleChange?.(!props.toggleValue());
                     },
@@ -13478,7 +13709,7 @@
       })
     });
   }
-  var import_react_native23, hideActionSheet2, showSimpleActionSheet3, useStyles3;
+  var import_react_native24, hideActionSheet2, showSimpleActionSheet3, useStyles3;
   var init_AddonCard = __esm({
     "src/core/ui/components/AddonCard.tsx"() {
       "use strict";
@@ -13491,7 +13722,7 @@
       init_wrappers();
       init_color();
       init_styles();
-      import_react_native23 = __toESM(require_react_native());
+      import_react_native24 = __toESM(require_react_native());
       ({ hideActionSheet: hideActionSheet2 } = lazyDestructure(() => findByProps("openLazy", "hideActionSheet")));
       ({ showSimpleActionSheet: showSimpleActionSheet3 } = lazyDestructure(() => findByProps("showSimpleActionSheet")));
       useStyles3 = createStyles({
@@ -13679,7 +13910,7 @@
             /* @__PURE__ */ jsx(BottomSheetTitleHeader, {
               title: "Options"
             }),
-            /* @__PURE__ */ jsxs(import_react_native24.View, {
+            /* @__PURE__ */ jsxs(import_react_native25.View, {
               style: {
                 paddingVertical: 20,
                 gap: 12
@@ -13750,7 +13981,7 @@
       }
     });
   }
-  var import_react_native24;
+  var import_react_native25;
   var init_Themes = __esm({
     "src/core/ui/settings/pages/Themes/index.tsx"() {
       "use strict";
@@ -13768,7 +13999,7 @@
       init_settings();
       init_storage2();
       init_components();
-      import_react_native24 = __toESM(require_react_native());
+      import_react_native25 = __toESM(require_react_native());
     }
   });
 
@@ -13950,7 +14181,7 @@
     var themeFonts = currentTheme.fonts;
     var [fontName, setFontName] = (0, import_react7.useState)(guessFontName(Object.values(themeFonts)));
     var [error, setError] = (0, import_react7.useState)(void 0);
-    return /* @__PURE__ */ jsxs(import_react_native25.View, {
+    return /* @__PURE__ */ jsxs(import_react_native26.View, {
       style: {
         padding: 8,
         paddingBottom: 16,
@@ -14003,7 +14234,7 @@
     var [fontLink, setFontLink] = (0, import_react7.useState)("");
     var [saving, setSaving] = (0, import_react7.useState)(false);
     var [error, setError] = (0, import_react7.useState)(void 0);
-    return /* @__PURE__ */ jsxs(import_react_native25.View, {
+    return /* @__PURE__ */ jsxs(import_react_native26.View, {
       style: {
         padding: 8,
         paddingBottom: 16,
@@ -14046,7 +14277,7 @@
   function EntryEditorActionSheet(props) {
     var [familyName, setFamilyName] = (0, import_react7.useState)(props.name);
     var [fontUrl, setFontUrl] = (0, import_react7.useState)(props.fontEntries[props.name]);
-    return /* @__PURE__ */ jsxs(import_react_native25.View, {
+    return /* @__PURE__ */ jsxs(import_react_native26.View, {
       style: {
         padding: 8,
         paddingBottom: 16,
@@ -14102,14 +14333,14 @@
     var urlRef = (0, import_react7.useRef)();
     var [nameSet, setNameSet] = (0, import_react7.useState)(false);
     var [error, setError] = (0, import_react7.useState)();
-    return /* @__PURE__ */ jsxs(import_react_native25.View, {
+    return /* @__PURE__ */ jsxs(import_react_native26.View, {
       style: {
         flexDirection: "row",
         gap: 8,
         justifyContent: "flex-start"
       },
       children: [
-        /* @__PURE__ */ jsx(import_react_native25.View, {
+        /* @__PURE__ */ jsx(import_react_native26.View, {
           style: {
             flex: 1
           },
@@ -14175,7 +14406,7 @@
     ]);
     var fontEntries = useProxy(memoEntry);
     var navigation2 = NavigationNative.useNavigation();
-    return /* @__PURE__ */ jsx(import_react_native25.ScrollView, {
+    return /* @__PURE__ */ jsx(import_react_native26.ScrollView, {
       style: {
         flex: 1
       },
@@ -14284,7 +14515,7 @@
               })
             ]
           }),
-          /* @__PURE__ */ jsx(import_react_native25.View, {
+          /* @__PURE__ */ jsx(import_react_native26.View, {
             style: {
               flexDirection: "row",
               justifyContent: "flex-end",
@@ -14328,7 +14559,7 @@
       })
     });
   }
-  var import_react7, import_react_native25, actionSheet2;
+  var import_react7, import_react_native26, actionSheet2;
   var init_FontEditor = __esm({
     "src/core/ui/settings/pages/Fonts/FontEditor.tsx"() {
       "use strict";
@@ -14347,7 +14578,7 @@
       init_wrappers();
       init_components2();
       import_react7 = __toESM(require_react());
-      import_react_native25 = __toESM(require_react_native());
+      import_react_native26 = __toESM(require_react_native());
       actionSheet2 = findByPropsLazy("hideActionSheet");
     }
   });
@@ -14363,7 +14594,7 @@
 
   // src/core/ui/settings/pages/Fonts/FontCard.tsx
   function FontPreview({ font }) {
-    var TEXT_NORMAL = useToken(tokens.colors.TEXT_NORMAL);
+    var TEXT_NORMAL = useToken2(tokens.colors.TEXT_NORMAL);
     var { fontFamily: fontFamilyList, fontSize } = TextStyleSheet["text-md/medium"];
     var fontFamily = fontFamilyList.split(/,/g)[0];
     var typeface = Skia.useFont(font.main[fontFamily])?.getTypeface();
@@ -14384,7 +14615,7 @@
     ]);
     return (
       // This does not work, actually :woeis:
-      /* @__PURE__ */ jsx(import_react_native26.View, {
+      /* @__PURE__ */ jsx(import_react_native27.View, {
         style: {
           height: 64
         },
@@ -14398,7 +14629,7 @@
             y: 0,
             width: 300
           })
-        }) : /* @__PURE__ */ jsx(import_react_native26.View, {
+        }) : /* @__PURE__ */ jsx(import_react_native27.View, {
           style: {
             justifyContent: "center",
             alignItems: "center"
@@ -14420,19 +14651,19 @@
       children: /* @__PURE__ */ jsxs(Stack, {
         spacing: 16,
         children: [
-          /* @__PURE__ */ jsxs(import_react_native26.View, {
+          /* @__PURE__ */ jsxs(import_react_native27.View, {
             style: {
               flexDirection: "row",
               alignItems: "center"
             },
             children: [
-              /* @__PURE__ */ jsx(import_react_native26.View, {
+              /* @__PURE__ */ jsx(import_react_native27.View, {
                 children: /* @__PURE__ */ jsx(Text, {
                   variant: "heading-lg/semibold",
                   children: font.name
                 })
               }),
-              /* @__PURE__ */ jsx(import_react_native26.View, {
+              /* @__PURE__ */ jsx(import_react_native27.View, {
                 style: {
                   marginLeft: "auto"
                 },
@@ -14482,7 +14713,7 @@
       })
     });
   }
-  var Skia, import_react8, import_react_native26, useToken;
+  var Skia, import_react8, import_react_native27, useToken2;
   var init_FontCard = __esm({
     "src/core/ui/settings/pages/Fonts/FontCard.tsx"() {
       "use strict";
@@ -14503,9 +14734,9 @@
       Skia = __toESM(require_react_native_skia());
       init_styles();
       import_react8 = __toESM(require_react());
-      import_react_native26 = __toESM(require_react_native());
+      import_react_native27 = __toESM(require_react_native());
       init_FontEditor();
-      ({ useToken } = lazyDestructure(() => findByProps("useToken")));
+      ({ useToken: useToken2 } = lazyDestructure(() => findByProps("useToken")));
     }
   });
 
@@ -14607,7 +14838,7 @@
   function AssetDisplay({ asset }) {
     return /* @__PURE__ */ jsx(LegacyFormRow, {
       label: `${asset.name} - ${asset.id}`,
-      trailing: /* @__PURE__ */ jsx(import_react_native27.Image, {
+      trailing: /* @__PURE__ */ jsx(import_react_native28.Image, {
         source: asset.id,
         style: {
           width: 32,
@@ -14620,7 +14851,7 @@
       }
     });
   }
-  var import_react_native27;
+  var import_react_native28;
   var init_AssetDisplay = __esm({
     "src/core/ui/settings/pages/Developer/AssetDisplay.tsx"() {
       "use strict";
@@ -14630,15 +14861,16 @@
       init_common();
       init_components();
       init_toasts();
-      import_react_native27 = __toESM(require_react_native());
+      import_react_native28 = __toESM(require_react_native());
     }
   });
 
   // src/core/ui/settings/pages/Developer/AssetBrowser.tsx
   function AssetBrowser() {
     var [search, setSearch] = React.useState("");
+    var all = (0, import_react10.useMemo)(() => Array.from(iterateAssets()), []);
     return /* @__PURE__ */ jsx(ErrorBoundary, {
-      children: /* @__PURE__ */ jsxs(import_react_native28.View, {
+      children: /* @__PURE__ */ jsxs(import_react_native29.View, {
         style: {
           flex: 1
         },
@@ -14649,8 +14881,8 @@
             },
             onChangeText: (v2) => setSearch(v2)
           }),
-          /* @__PURE__ */ jsx(import_react_native28.FlatList, {
-            data: Object.values(assetsMap).filter((a) => a.name.includes(search) || a.id.toString() === search),
+          /* @__PURE__ */ jsx(import_react_native29.FlatList, {
+            data: all.filter((a) => a.name.includes(search) || a.id.toString() === search),
             renderItem: ({ item }) => /* @__PURE__ */ jsx(AssetDisplay, {
               asset: item
             }),
@@ -14661,7 +14893,7 @@
       })
     });
   }
-  var import_react_native28;
+  var import_react10, import_react_native29;
   var init_AssetBrowser = __esm({
     "src/core/ui/settings/pages/Developer/AssetBrowser.tsx"() {
       "use strict";
@@ -14672,7 +14904,8 @@
       init_assets();
       init_components();
       init_components2();
-      import_react_native28 = __toESM(require_react_native());
+      import_react10 = __toESM(require_react());
+      import_react_native29 = __toESM(require_react_native());
     }
   });
 
@@ -14688,7 +14921,7 @@
     useProxy(settings);
     useProxy(loaderConfig);
     return /* @__PURE__ */ jsx(ErrorBoundary, {
-      children: /* @__PURE__ */ jsx(import_react_native29.ScrollView, {
+      children: /* @__PURE__ */ jsx(import_react_native30.ScrollView, {
         style: {
           flex: 1
         },
@@ -14731,7 +14964,7 @@
                     }),
                     onPress: () => window[getReactDevToolsProp() || "__vendetta_rdc"]?.connectToDevTools({
                       host: settings.debuggerUrl.split(":")?.[0],
-                      resolveRNStyle: import_react_native29.StyleSheet.flatten
+                      resolveRNStyle: import_react_native30.StyleSheet.flatten
                     })
                   })
                 })
@@ -14870,7 +15103,7 @@
       })
     });
   }
-  var import_react_native29, hideActionSheet3, showSimpleActionSheet4, RDT_EMBED_LINK, useStyles4;
+  var import_react_native30, hideActionSheet3, showSimpleActionSheet4, RDT_EMBED_LINK, useStyles4;
   var init_Developer = __esm({
     "src/core/ui/settings/pages/Developer/index.tsx"() {
       "use strict";
@@ -14893,7 +15126,7 @@
       init_color();
       init_components2();
       init_styles();
-      import_react_native29 = __toESM(require_react_native());
+      import_react_native30 = __toESM(require_react_native());
       ({ hideActionSheet: hideActionSheet3 } = lazyDestructure(() => findByProps("openLazy", "hideActionSheet")));
       ({ showSimpleActionSheet: showSimpleActionSheet4 } = lazyDestructure(() => findByProps("showSimpleActionSheet")));
       RDT_EMBED_LINK = "https://raw.githubusercontent.com/amsyarasyiq/rdt-embedder/main/dist.js";
@@ -14919,7 +15152,7 @@
             uri: pyoncord_default
           },
           render: () => Promise.resolve().then(() => (init_General(), General_exports)),
-          useTrailing: () => `(${"92caf89-dev"})`
+          useTrailing: () => `(${"c168237-dev"})`
         },
         {
           key: "BUNNY_PLUGINS",
@@ -14989,7 +15222,7 @@
   });
 
   // src/core/vendetta/api.tsx
-  var import_react10, import_react_native30, initVendettaObject;
+  var import_react11, import_react_native31, initVendettaObject;
   var init_api3 = __esm({
     "src/core/vendetta/api.tsx"() {
       "use strict";
@@ -15018,8 +15251,8 @@
       init_styles();
       init_toasts();
       init_dist();
-      import_react10 = __toESM(require_react());
-      import_react_native30 = __toESM(require_react_native());
+      import_react11 = __toESM(require_react());
+      import_react_native31 = __toESM(require_react_native());
       init_plugins();
       initVendettaObject = () => {
         var createStackBasedFilter = (fn) => {
@@ -15049,8 +15282,8 @@
                     ...module,
                     ActionSheetTitleHeader: module.BottomSheetTitleHeader,
                     ActionSheetContentContainer: ({ children }) => {
-                      (0, import_react10.useEffect)(() => console.warn("Discord has removed 'ActionSheetContentContainer', please move into something else. This has been temporarily replaced with View"), []);
-                      return /* @__PURE__ */ (0, import_react10.createElement)(import_react_native30.View, null, children);
+                      (0, import_react11.useEffect)(() => console.warn("Discord has removed 'ActionSheetContentContainer', please move into something else. This has been temporarily replaced with View"), []);
+                      return /* @__PURE__ */ (0, import_react11.createElement)(import_react_native31.View, null, children);
                     }
                   };
                 }
@@ -15145,7 +15378,28 @@
               showInputAlert: (options) => showInputAlert(options)
             },
             assets: {
-              all: assetsMap,
+              all: new Proxy({}, {
+                get(cache, p) {
+                  if (typeof p !== "string")
+                    return void 0;
+                  if (cache[p])
+                    return cache[p];
+                  for (var asset of iterateAssets()) {
+                    if (asset.name)
+                      return cache[p] = asset;
+                  }
+                },
+                ownKeys(cache) {
+                  var keys = /* @__PURE__ */ new Set();
+                  for (var asset of iterateAssets()) {
+                    cache[asset.name] = asset;
+                    keys.add(asset.name);
+                  }
+                  return [
+                    ...keys
+                  ];
+                }
+              }),
               find: (filter) => findAsset(filter),
               getAssetByName: (name) => findAsset(name),
               getAssetByID: (id) => findAsset(id),
@@ -15389,13 +15643,13 @@
         yield (init_caches(), __toCommonJS(caches_exports)).initMetroCache();
         yield (init_src(), __toCommonJS(src_exports)).default();
       } catch (e) {
-        var { ClientInfoManager: ClientInfoManager2 } = (init_modules(), __toCommonJS(modules_exports));
+        var { ClientInfoManager } = (init_modules(), __toCommonJS(modules_exports));
         var stack = e instanceof Error ? e.stack : void 0;
         console.log(stack ?? e?.toString?.() ?? e);
         alert([
           "Failed to load Bunny!\n",
-          `Build Number: ${ClientInfoManager2.Build}`,
-          `Bunny: ${"92caf89-dev"}`,
+          `Build Number: ${ClientInfoManager.Build}`,
+          `Bunny: ${"c168237-dev"}`,
           stack || e?.toString?.()
         ].join("\n"));
       }
