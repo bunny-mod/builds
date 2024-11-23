@@ -2889,7 +2889,7 @@
     var resolveType = (type2 = "dark") => (colorsPref.type ?? type2) === "dark" ? "darker" : "light";
     if (manifest.spec === 3) {
       var semanticColorDefinitions = {};
-      for (var [semanticColorKey, semanticColorValue] of Object.entries(manifest.semantic ?? {})) {
+      for (var [semanticColorKey, semanticColorValue] of Object.entries(manifest.main.semantic ?? {})) {
         if (typeof semanticColorValue === "object") {
           var { type, value, opacity: semanticColorOpacity } = semanticColorValue;
           if (type === "raw") {
@@ -2920,12 +2920,14 @@
           throw new Error(`Invalid semantic definitions: ${semanticColorValue}`);
         }
       }
+      if (import_react_native2.Platform.OS === "android")
+        applyAndroidAlphaKeys(manifest.main.raw);
       return {
         spec: 3,
         reference: resolveType(manifest.type),
         semantic: semanticColorDefinitions,
-        raw: manifest.raw ?? {},
-        background: manifest.background
+        raw: manifest.main.raw ?? {},
+        background: manifest.main.background
       };
     } else if (manifest.spec === 2) {
       var semanticDefinitions = {};
@@ -3359,41 +3361,52 @@
     data.spec ??= 2;
     return data;
   }
-  function fetchTheme(id) {
+  function validateTheme(themeJSON) {
+    if (typeof themeJSON !== "object" || themeJSON === null)
+      return false;
+    if (themeJSON.spec !== 2 && themeJSON.spec !== 3)
+      return false;
+    if (!themeJSON.main)
+      return false;
+    return true;
+  }
+  function fetchTheme(url2) {
     return _fetchTheme.apply(this, arguments);
   }
   function _fetchTheme() {
-    _fetchTheme = _async_to_generator(function* (id, selected = false) {
+    _fetchTheme = _async_to_generator(function* (url2, selected = false) {
       var themeJSON;
       try {
-        themeJSON = yield (yield safeFetch(id, {
+        themeJSON = yield (yield safeFetch(url2, {
           cache: "no-store"
         })).json();
       } catch (e) {
-        throw new Error(`Failed to fetch theme at ${id}`);
+        throw new Error(`Failed to fetch theme at ${url2}`);
       }
-      themes[id] = {
-        id,
+      if (!validateTheme(themeJSON))
+        throw new Error(`Invalid theme at ${url2}`);
+      themes[url2] = {
+        id: url2,
         selected,
         data: processData(themeJSON)
       };
       if (selected) {
-        writeThemeToNative(themes[id]);
-        updateBunnyColor(themes[id].data, {
+        writeThemeToNative(themes[url2]);
+        updateBunnyColor(themes[url2].data, {
           update: true
         });
       }
     });
     return _fetchTheme.apply(this, arguments);
   }
-  function installTheme(id) {
+  function installTheme(url2) {
     return _installTheme.apply(this, arguments);
   }
   function _installTheme() {
-    _installTheme = _async_to_generator(function* (id) {
-      if (typeof id !== "string" || id in themes)
+    _installTheme = _async_to_generator(function* (url2) {
+      if (typeof url2 !== "string" || url2 in themes)
         throw new Error("Theme already installed");
-      yield fetchTheme(id);
+      yield fetchTheme(url2);
     });
     return _installTheme.apply(this, arguments);
   }
@@ -4631,7 +4644,7 @@
       init_logger();
       init_toasts();
       import_react_native5 = __toESM(require_react_native());
-      versionHash = "c168237-dev";
+      versionHash = "85cbac7-dev";
     }
   });
 
@@ -14795,7 +14808,9 @@
   // src/core/ui/hooks/useFS.ts
   function useFileExists(path, prefix) {
     var [state, setState] = (0, import_react9.useState)(2);
-    var check = () => fileExists(path, prefix).then((exists) => setState(exists ? 1 : 0)).catch(() => setState(3));
+    var check = () => fileExists(path, {
+      prefix
+    }).then((exists) => setState(exists ? 1 : 0)).catch(() => setState(3));
     var customFS = (0, import_react9.useMemo)(() => new Proxy(fs_exports, {
       get(target, p, receiver) {
         var val = Reflect.get(target, p, receiver);
@@ -15152,7 +15167,7 @@
             uri: pyoncord_default
           },
           render: () => Promise.resolve().then(() => (init_General(), General_exports)),
-          useTrailing: () => `(${"c168237-dev"})`
+          useTrailing: () => `(${"85cbac7-dev"})`
         },
         {
           key: "BUNNY_PLUGINS",
@@ -15649,7 +15664,7 @@
         alert([
           "Failed to load Bunny!\n",
           `Build Number: ${ClientInfoManager.Build}`,
-          `Bunny: ${"c168237-dev"}`,
+          `Bunny: ${"85cbac7-dev"}`,
           stack || e?.toString?.()
         ].join("\n"));
       }
