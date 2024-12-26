@@ -3366,7 +3366,7 @@
       return false;
     if (themeJSON.spec !== 2 && themeJSON.spec !== 3)
       return false;
-    if (!themeJSON.main)
+    if (themeJSON.spec === 3 && !themeJSON.main)
       return false;
     return true;
   }
@@ -3867,10 +3867,11 @@
       "register",
       "get"
     ].every((x2) => moduleExports[x2])) {
-      instead2("register", moduleExports, (args, origFunc) => {
+      instead2("register", moduleExports, ([name, cb], origFunc) => {
         try {
-          return origFunc(...args);
+          return origFunc(name, cb);
         } catch (e) {
+          return name;
         }
       });
       patchedNativeComponentRegistry = true;
@@ -4644,7 +4645,7 @@
       init_logger();
       init_toasts();
       import_react_native5 = __toESM(require_react_native());
-      versionHash = "85cbac7-dev";
+      versionHash = "c3cbc78-dev";
     }
   });
 
@@ -5925,7 +5926,7 @@
     return /* @__PURE__ */ jsx(TableRow, {
       label,
       icon: /* @__PURE__ */ jsx(TableRow.Icon, {
-        source: findAssetId(icon)
+        source: typeof icon === "string" ? findAssetId(icon) : icon
       }),
       trailing: /* @__PURE__ */ jsx(LegacyFormText, {
         children: version
@@ -5957,7 +5958,9 @@
       {
         label: Strings.BUNNY,
         version: debugInfo.bunny.version,
-        icon: "ic_progress_wrench_24px"
+        icon: {
+          uri: pyoncord_default
+        }
       },
       {
         label: "Discord",
@@ -5967,51 +5970,51 @@
       {
         label: "React",
         version: debugInfo.react.version,
-        icon: "ic_category_16px"
+        icon: "ScienceIcon"
       },
       {
         label: "React Native",
         version: debugInfo.react.nativeVersion,
-        icon: "mobile"
+        icon: "MobilePhoneIcon"
       },
       {
         label: Strings.BYTECODE,
         version: debugInfo.hermes.bytecodeVersion,
-        icon: "ic_server_security_24px"
+        icon: "TopicsIcon"
       }
     ];
     var platformInfo = [
       {
         label: Strings.LOADER,
         version: `${debugInfo.bunny.loader.name} (${debugInfo.bunny.loader.version})`,
-        icon: "ic_download_24px"
+        icon: "DownloadIcon"
       },
       {
         label: Strings.OPERATING_SYSTEM,
         version: `${debugInfo.os.name} ${debugInfo.os.version}`,
-        icon: "ic_cog_24px"
+        icon: "ScreenIcon"
       },
       ...debugInfo.os.sdk ? [
         {
           label: "SDK",
           version: debugInfo.os.sdk,
-          icon: "pencil"
+          icon: "StaffBadgeIcon"
         }
       ] : [],
       {
         label: Strings.MANUFACTURER,
         version: debugInfo.device.manufacturer,
-        icon: "ic_badge_staff"
+        icon: "WrenchIcon"
       },
       {
         label: Strings.BRAND,
         version: debugInfo.device.brand,
-        icon: "ic_settings_boost_24px"
+        icon: "SparklesIcon"
       },
       {
         label: Strings.MODEL,
         version: debugInfo.device.model,
-        icon: "ic_phonelink_24px"
+        icon: "MobilePhoneIcon"
       },
       {
         label: import_react_native15.Platform.select({
@@ -6019,7 +6022,7 @@
           ios: Strings.MACHINE_ID
         }),
         version: debugInfo.device.codename,
-        icon: "ic_compose_24px"
+        icon: "TagIcon"
       }
     ];
     return /* @__PURE__ */ jsx(import_react_native15.ScrollView, {
@@ -6064,6 +6067,7 @@
       init_promiseAllSettled();
       init_jsxRuntime();
       init_i18n();
+      init_settings3();
       init_Version();
       init_storage();
       init_debug();
@@ -9201,7 +9205,7 @@
                   // },
                   {
                     label: "Clear Data",
-                    iconSource: findAssetId("CopyIcon"),
+                    iconSource: findAssetId("FileIcon"),
                     variant: "destructive",
                     action: () => {
                     }
@@ -9411,7 +9415,7 @@
               /* @__PURE__ */ jsx(ActionSheetRow, {
                 label: Strings.COPY_URL,
                 icon: /* @__PURE__ */ jsx(TableRow.Icon, {
-                  source: findAssetId("copy")
+                  source: findAssetId("LinkIcon")
                 }),
                 onPress: () => {
                   clipboard.setString(plugin.id);
@@ -9421,7 +9425,7 @@
               /* @__PURE__ */ jsx(ActionSheetRow, {
                 label: vdPlugin.update ? Strings.DISABLE_UPDATES : Strings.ENABLE_UPDATES,
                 icon: /* @__PURE__ */ jsx(TableRow.Icon, {
-                  source: findAssetId("ic_download_24px")
+                  source: findAssetId("DownloadIcon")
                 }),
                 onPress: () => {
                   vdPlugin.update = !vdPlugin.update;
@@ -9434,8 +9438,10 @@
               /* @__PURE__ */ jsx(ActionSheetRow, {
                 label: Strings.CLEAR_DATA,
                 icon: /* @__PURE__ */ jsx(TableRow.Icon, {
-                  source: findAssetId("ic_duplicate")
+                  variant: "danger",
+                  source: findAssetId("CopyIcon")
                 }),
+                variant: "danger",
                 onPress: () => showConfirmationAlert({
                   title: Strings.HOLD_UP,
                   content: formatString("ARE_YOU_SURE_TO_CLEAR_DATA", {
@@ -9478,8 +9484,10 @@
               /* @__PURE__ */ jsx(ActionSheetRow, {
                 label: Strings.DELETE,
                 icon: /* @__PURE__ */ jsx(TableRow.Icon, {
-                  source: findAssetId("ic_message_delete")
+                  variant: "danger",
+                  source: findAssetId("TrashIcon")
                 }),
+                variant: "danger",
                 onPress: () => showConfirmationAlert({
                   title: Strings.HOLD_UP,
                   content: formatString("ARE_YOU_SURE_TO_DELETE_PLUGIN", {
@@ -15167,7 +15175,7 @@
             uri: pyoncord_default
           },
           render: () => Promise.resolve().then(() => (init_General(), General_exports)),
-          useTrailing: () => `(${"85cbac7-dev"})`
+          useTrailing: () => `(${"c3cbc78-dev"})`
         },
         {
           key: "BUNNY_PLUGINS",
@@ -15664,7 +15672,7 @@
         alert([
           "Failed to load Bunny!\n",
           `Build Number: ${ClientInfoManager.Build}`,
-          `Bunny: ${"85cbac7-dev"}`,
+          `Bunny: ${"c3cbc78-dev"}`,
           stack || e?.toString?.()
         ].join("\n"));
       }
